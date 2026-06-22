@@ -1,50 +1,69 @@
 import { getDb } from './connection.js'
-import type { MessageRow, UserRow, ChannelRow, FileMeta, ChatMessage, ReactionInfo, ReactionRow } from '../types.js'
+import type { MessageRow, UserRow, ChannelRow, FileMeta, ChatMessage, ReactionInfo } from '../types.js'
 
 const INITIAL_LIMIT = 50
 const PAGE_SIZE = 50
 
-export function getReactionsForMessage(messageId: number): ReactionInfo[] {
-  const rows = getDb().prepare(
-    'SELECT username, emoji FROM reactions WHERE message_id = ?'
-  ).all(messageId) as unknown as { username: string; emoji: string }[]
-  const map = new Map<string, string[]>()
-  for (const r of rows) {
-    const arr = map.get(r.emoji) ?? []
-    arr.push(r.username)
-    map.set(r.emoji, arr)
-  }
-  return [...map.entries()].map(([emoji, users]) => ({ emoji, users }))
+interface EnrichedRow extends MessageRow {
+  reply_username: string | null
+  reply_content: string | null
 }
 
-export function getReplyInfo(replyTo: number | null): { content: string; username: string } | null {
-  if (!replyTo) return null
-  const row = getDb().prepare(
-    'SELECT username, content FROM messages WHERE id = ?'
-  ).get(replyTo) as unknown as { username: string; content: string } | undefined
-  if (!row) return null
-  return { content: row.content.slice(0, 100), username: row.username }
-}
+function batchEnrich(rows: MessageRow[]): ChatMessage[] {
+  if (rows.length === 0) return []
+  const db = getDb()
+  const ids = rows.map((r) => r.id)
+  const replyIds = rows.map((r) => r.reply_to).filter((v): v is number => v !== null)
+  const idPlaceholders = ids.map(() => '?').join(',')
 
-function rowToMessage(r: MessageRow): ChatMessage {
-  let file: FileMeta | undefined
-  if (r.file_json) {
-    try { file = JSON.parse(r.file_json) as FileMeta } catch { file = undefined }
+  const reactionMap = new Map<number, ReactionInfo[]>()
+  if (ids.length > 0) {
+    const reactionRows = db.prepare(
+      `SELECT message_id, username, emoji FROM reactions WHERE message_id IN (${idPlaceholders})`
+    ).all(...ids) as unknown as { message_id: number; username: string; emoji: string }[]
+    for (const r of reactionRows) {
+      const arr = reactionMap.get(r.message_id) ?? []
+      const existing = arr.find((a) => a.emoji === r.emoji)
+      if (existing) {
+        existing.users.push(r.username)
+      } else {
+        arr.push({ emoji: r.emoji, users: [r.username] })
+      }
+      reactionMap.set(r.message_id, arr)
+    }
   }
-  const replyInfo = getReplyInfo(r.reply_to)
-  const reactions = getReactionsForMessage(r.id)
-  return {
-    type: 'message',
-    id: r.id,
-    username: r.username,
-    content: r.content || undefined,
-    file,
-    timestamp: r.created_at,
-    replyTo: r.reply_to ?? undefined,
-    replyToContent: replyInfo?.content,
-    replyToUsername: replyInfo?.username,
-    reactions: reactions.length > 0 ? reactions : undefined,
+
+  const replyMap = new Map<number, { username: string; content: string }>()
+  if (replyIds.length > 0) {
+    const placeholders = replyIds.map(() => '?').join(',')
+    const replyRows = db.prepare(
+      `SELECT id, username, content FROM messages WHERE id IN (${placeholders})`
+    ).all(...replyIds) as unknown as { id: number; username: string; content: string }[]
+    for (const r of replyRows) {
+      replyMap.set(r.id, { username: r.username, content: r.content.slice(0, 100) })
+    }
   }
+
+  return rows.map((r) => {
+    let file: FileMeta | undefined
+    if (r.file_json) {
+      try { file = JSON.parse(r.file_json) as FileMeta } catch { file = undefined }
+    }
+    const replyInfo = r.reply_to ? replyMap.get(r.reply_to) : null
+    const reactions = reactionMap.get(r.id)
+    return {
+      type: 'message' as const,
+      id: r.id,
+      username: r.username,
+      content: r.content || undefined,
+      file,
+      timestamp: r.created_at,
+      replyTo: r.reply_to ?? undefined,
+      replyToContent: replyInfo?.content,
+      replyToUsername: replyInfo?.username,
+      reactions: reactions && reactions.length > 0 ? reactions : undefined,
+    }
+  })
 }
 
 export function saveMessage(
@@ -58,24 +77,17 @@ export function saveMessage(
   const db = getDb()
   const fileJson = file ? JSON.stringify(file) : null
   const tsDb = timestamp.includes('T') ? timestamp.replace('T', ' ').replace(/\.\d+Z?$/, '') : timestamp
-  db.exec('BEGIN')
-  try {
-    const result = db.prepare(
-      'INSERT INTO messages (channel_id, username, content, file_json, reply_to, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(channelId, username, content, fileJson, replyTo, tsDb)
-    db.prepare(
-      `INSERT INTO users (username, last_seen) VALUES (?, datetime('now'))
-       ON CONFLICT(username) DO UPDATE SET last_seen = datetime('now')`
-    ).run(username)
-    db.prepare(
-      'UPDATE users SET message_count = message_count + 1, last_seen = datetime(\'now\') WHERE username = ?'
-    ).run(username)
-    db.exec('COMMIT')
-    return Number(result.lastInsertRowid)
-  } catch (e) {
-    db.exec('ROLLBACK')
-    throw e
-  }
+
+  const result = db.prepare(
+    'INSERT INTO messages (channel_id, username, content, file_json, reply_to, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(channelId, username, content, fileJson, replyTo, tsDb)
+
+  db.prepare(
+    `INSERT INTO users (username, last_seen) VALUES (?, datetime('now'))
+     ON CONFLICT(username) DO UPDATE SET last_seen = datetime('now')`
+  ).run(username)
+
+  return Number(result.lastInsertRowid)
 }
 
 export function getRecentHistory(channelId: number): ChatMessage[] {
@@ -83,7 +95,7 @@ export function getRecentHistory(channelId: number): ChatMessage[] {
     `SELECT id, username, content, file_json, channel_id, reply_to, created_at FROM messages
      WHERE channel_id = ? ORDER BY id DESC LIMIT ${INITIAL_LIMIT}`
   ).all(channelId) as unknown as MessageRow[]
-  return rows.reverse().map(rowToMessage)
+  return batchEnrich(rows.reverse())
 }
 
 export function getHistoryBefore(channelId: number, beforeId: number): ChatMessage[] {
@@ -91,7 +103,7 @@ export function getHistoryBefore(channelId: number, beforeId: number): ChatMessa
     `SELECT id, username, content, file_json, channel_id, reply_to, created_at FROM messages
      WHERE channel_id = ? AND id < ? ORDER BY id DESC LIMIT ${PAGE_SIZE}`
   ).all(channelId, beforeId) as unknown as MessageRow[]
-  return rows.reverse().map(rowToMessage)
+  return batchEnrich(rows.reverse())
 }
 
 export function addReaction(messageId: number, username: string, emoji: string): boolean {
@@ -114,6 +126,28 @@ export function removeReaction(messageId: number, username: string, emoji: strin
   } catch {
     return false
   }
+}
+
+export function getReactionsForMessage(messageId: number): ReactionInfo[] {
+  const rows = getDb().prepare(
+    'SELECT username, emoji FROM reactions WHERE message_id = ?'
+  ).all(messageId) as unknown as { username: string; emoji: string }[]
+  const map = new Map<string, string[]>()
+  for (const r of rows) {
+    const arr = map.get(r.emoji) ?? []
+    arr.push(r.username)
+    map.set(r.emoji, arr)
+  }
+  return [...map.entries()].map(([emoji, users]) => ({ emoji, users }))
+}
+
+export function getReplyInfo(replyTo: number | null): { content: string; username: string } | null {
+  if (!replyTo) return null
+  const row = getDb().prepare(
+    'SELECT username, content FROM messages WHERE id = ?'
+  ).get(replyTo) as unknown as { username: string; content: string } | undefined
+  if (!row) return null
+  return { content: row.content.slice(0, 100), username: row.username }
 }
 
 export function getMessageChannelId(messageId: number): number | null {

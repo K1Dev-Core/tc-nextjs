@@ -217,16 +217,24 @@ export function useChat(username: string | null) {
     ws.send(JSON.stringify({ type: 'typing' }))
   }, [])
 
-  const react = useCallback((messageId: number, emoji: string) => {
+  const toggleReaction = useCallback((messageId: number, emoji: string) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    ws.send(JSON.stringify({ type: 'react', replyTo: messageId, emoji }))
-  }, [])
-
-  const unreact = useCallback((messageId: number, emoji: string) => {
-    const ws = wsRef.current
-    if (!ws || ws.readyState !== WebSocket.OPEN) return
-    ws.send(JSON.stringify({ type: 'unreact', replyTo: messageId, emoji }))
+    const me = usernameRef.current ?? ''
+    let hasReaction = false
+    setLines((prev) => {
+      const line = prev.find((l) => l.dbId === messageId)
+      if (line?.reactions) {
+        const r = line.reactions.find((rx) => rx.emoji === emoji)
+        if (r && r.users.includes(me)) hasReaction = true
+      }
+      return prev
+    })
+    if (hasReaction) {
+      ws.send(JSON.stringify({ type: 'unreact', replyTo: messageId, emoji }))
+    } else {
+      ws.send(JSON.stringify({ type: 'react', replyTo: messageId, emoji }))
+    }
   }, [])
 
   const switchChannel = useCallback((name: string) => {
@@ -270,7 +278,7 @@ export function useChat(username: string | null) {
 
   return {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
-    send, sendTyping, react, unreact,
+    send, sendTyping, toggleReaction,
     channels, activeChannel, switchChannel, createChannel,
   }
 }

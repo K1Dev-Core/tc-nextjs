@@ -16,13 +16,20 @@ interface ChatMessagesProps {
   onLoadMore: () => void
   onReply: (line: LineMessage) => void
   onReact: (messageId: number, emoji: string) => void
+  scrollTrigger: string
 }
 
-export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact }: ChatMessagesProps) {
+export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, scrollTrigger }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevHeight = useRef(0)
   const atBottom = useRef(true)
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior })
+  }, [])
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -47,10 +54,14 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   }, [lines])
 
   useEffect(() => {
-    if (atBottom.current && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (atBottom.current) {
+      scrollToBottom('smooth')
     }
-  }, [lines, typingUsers])
+  }, [lines, typingUsers, scrollToBottom])
+
+  useEffect(() => {
+    scrollToBottom('auto')
+  }, [scrollTrigger, scrollToBottom])
 
   return (
     <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scroll-slim px-3 sm:px-5 md:px-8 py-5 space-y-2">

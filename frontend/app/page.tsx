@@ -25,7 +25,7 @@ export default function Page() {
 
   const {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
-    send, sendTyping, react, channels, activeChannel, switchChannel, createChannel
+    send, sendTyping, toggleReaction, channels, activeChannel, switchChannel, createChannel
   } = useChat(mounted ? username : null)
 
   const typingUsers = useMemo(() => Object.keys(typing), [typing])
@@ -88,7 +88,8 @@ export default function Page() {
                     loadingMore={loadingMore}
                     onLoadMore={loadMore}
                     onReply={setReplyTo}
-                    onReact={react}
+                    onReact={toggleReaction}
+                    scrollTrigger={activeChannel}
                   />
                   <MessageInput
                     onSend={handleSend}

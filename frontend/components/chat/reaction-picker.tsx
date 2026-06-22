@@ -10,9 +10,11 @@ interface ReactionPickerProps {
 
 function ReactionPickerBase({ onPick, onClose }: ReactionPickerProps) {
   return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 glass rounded-2xl px-3 py-2.5 flex items-center gap-1 animate-slidein shadow-2xl">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center pb-24" onClick={onClose}>
+      <div
+        className="glass rounded-2xl px-3 py-2.5 flex items-center gap-1 animate-slideup shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {QUICK_EMOJIS.map((e) => (
           <button
             key={e}
@@ -31,7 +33,7 @@ function ReactionPickerBase({ onPick, onClose }: ReactionPickerProps) {
           </button>
         ))}
       </div>
-    </>
+    </div>
   )
 }
 
