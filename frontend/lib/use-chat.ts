@@ -38,6 +38,7 @@ export function useChat(username: string | null) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [channels, setChannels] = useState<ChannelInfo[]>([])
   const [activeChannel, setActiveChannel] = useState<string>('')
+  const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([])
 
   const wsRef = useRef<WebSocket | null>(null)
   const usernameRef = useRef(username)
@@ -88,6 +89,7 @@ export function useChat(username: string | null) {
           const mapped = m.history.map((h) => toLine(h, me))
           setLines(mapped)
           setTyping({})
+          if (m.pins) setPinnedMessages(m.pins)
           if (mapped.length > 0) {
             oldestDbId.current = mapped[0].dbId ?? null
             setHasMore(mapped.length >= 50)
@@ -116,6 +118,10 @@ export function useChat(username: string | null) {
           setLines((prev) => prev.map((l) =>
             l.dbId === m.id ? { ...l, reactions: m.reactions } : l
           ))
+          break
+        }
+        case 'pins_update': {
+          if (m.pins) setPinnedMessages(m.pins)
           break
         }
         case 'join': {
@@ -237,6 +243,17 @@ export function useChat(username: string | null) {
     }
   }, [])
 
+  const togglePin = useCallback((messageId: number) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    const isPinned = pinnedMessages.some((p) => p.id === messageId)
+    if (isPinned) {
+      ws.send(JSON.stringify({ type: 'unpin', replyTo: messageId }))
+    } else {
+      ws.send(JSON.stringify({ type: 'pin', replyTo: messageId }))
+    }
+  }, [pinnedMessages])
+
   const switchChannel = useCallback((name: string) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
@@ -278,7 +295,8 @@ export function useChat(username: string | null) {
 
   return {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
-    send, sendTyping, toggleReaction,
+    send, sendTyping, toggleReaction, togglePin,
     channels, activeChannel, switchChannel, createChannel,
+    pinnedMessages,
   }
 }

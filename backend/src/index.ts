@@ -5,7 +5,7 @@ import { getDb, closeDb } from './db/connection.js'
 import { handleConnection, startHeartbeat } from './ws/handler.js'
 import { getOnlineUsernames } from './ws/hub.js'
 import { handleUpload, serveFile } from './db/upload.js'
-import { getHistoryBefore, getChannels, getChannelByName } from './db/queries.js'
+import { getHistoryBefore, getChannels, getChannelByName, getPinnedMessages, getChannelById } from './db/queries.js'
 
 const PORT = Number(process.env.PORT ?? 8080)
 const HOST = process.env.HOST ?? '0.0.0.0'
@@ -49,6 +49,20 @@ const server = http.createServer((req, res) => {
     const channels = getChannels()
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ channels }))
+    return
+  }
+
+  if (path.startsWith('/pins/') && req.method === 'GET') {
+    const channelName = decodeURIComponent(path.slice('/pins/'.length))
+    const channel = getChannelByName(channelName)
+    if (!channel) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'channel not found' }))
+      return
+    }
+    const pins = getPinnedMessages(channel.id)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ pins }))
     return
   }
 

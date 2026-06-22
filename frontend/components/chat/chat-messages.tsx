@@ -16,10 +16,12 @@ interface ChatMessagesProps {
   onLoadMore: () => void
   onReply: (line: LineMessage) => void
   onReact: (messageId: number, emoji: string) => void
+  onPin: (messageId: number) => void
+  pinnedIds: Set<number>
   scrollTrigger: string
 }
 
-export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, scrollTrigger }: ChatMessagesProps) {
+export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, onPin, pinnedIds, scrollTrigger }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevHeight = useRef(0)
@@ -100,7 +102,7 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
           prev.username === line.username &&
           prev.mine === line.mine &&
           !line.replyTo
-        return <MessageBubble key={line.id} line={line} grouped={grouped} me={me ?? ''} onReply={onReply} onReact={onReact} />
+        return <MessageBubble key={line.id} line={line} grouped={grouped} me={me ?? ''} onReply={onReply} onReact={onReact} onPin={onPin} isPinned={line.dbId ? pinnedIds.has(line.dbId) : false} />
       })}
 
       <TypingIndicator names={typingUsers} />

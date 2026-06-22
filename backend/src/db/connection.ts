@@ -57,6 +57,17 @@ function migrate(d: DatabaseSync) {
       FOREIGN KEY (message_id) REFERENCES messages(id)
     );
     CREATE INDEX IF NOT EXISTS idx_reactions_message ON reactions(message_id);
+
+    CREATE TABLE IF NOT EXISTS pinned_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id INTEGER NOT NULL,
+      channel_id INTEGER NOT NULL,
+      pinned_by TEXT NOT NULL,
+      pinned_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (message_id) REFERENCES messages(id),
+      FOREIGN KEY (channel_id) REFERENCES channels(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_pinned_channel ON pinned_messages(channel_id);
   `)
 }
 

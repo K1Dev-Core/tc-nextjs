@@ -6,7 +6,8 @@ import { formatTime, avatarEmojiUrl } from '@/lib/avatar'
 import { Attachment } from './attachment'
 import { CodeBlock } from './code-block'
 import { ReactionPicker } from './reaction-picker'
-import { emojiUrl } from '@/lib/emoji'
+import { emojiUrl, emojiUrlFromChar } from '@/lib/emoji'
+import { PinIcon } from '@/components/ui/icons'
 
 interface MessageBubbleProps {
   line: LineMessage
@@ -14,6 +15,8 @@ interface MessageBubbleProps {
   me: string
   onReply: (line: LineMessage) => void
   onReact: (messageId: number, emoji: string) => void
+  onPin: (messageId: number) => void
+  isPinned: boolean
 }
 
 const FENCE_RE = /```(\w+)?\n?([\s\S]*?)```/g
@@ -120,7 +123,7 @@ function ReactionBadges({ reactions, me, onReact, messageId }: { reactions: Reac
   )
 }
 
-function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbleProps) {
+function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinned }: MessageBubbleProps) {
   const [showPicker, setShowPicker] = useState(false)
 
   if (line.type === 'system') {
@@ -196,6 +199,15 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
           >
             ตอบกลับ
           </button>
+          {line.dbId && (
+            <button
+              onClick={() => { if (line.dbId) onPin(line.dbId) }}
+              className={`opacity-0 group-hover:opacity-100 transition px-1.5 py-1 rounded-lg text-white/40 hover:text-white/90 hover:bg-white/5 ${isPinned ? 'opacity-100 text-amber-300' : ''}`}
+              aria-label="ปักหมุด"
+            >
+              <PinIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
           {line.content && <CopyButton text={line.content} />}
         </div>
       </div>

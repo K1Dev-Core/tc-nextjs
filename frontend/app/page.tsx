@@ -6,6 +6,7 @@ import { ChatHeader } from '@/components/chat/chat-header'
 import { ChatMessages } from '@/components/chat/chat-messages'
 import { MessageInput } from '@/components/chat/message-input'
 import { UsernameModal } from '@/components/auth/username-modal'
+import { PinnedPanel } from '@/components/chat/pinned-panel'
 import { ChatSkeleton, FullScreenLoader } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { LineMessage } from '@/lib/types'
@@ -16,8 +17,7 @@ export default function Page() {
   const [mounted, setMounted] = useState(false)
   const [username, setUsername] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<LineMessage | null>(null)
-
-  const [avatarKey, setAvatarKey] = useState(0)
+  const [showPinned, setShowPinned] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -27,11 +27,14 @@ export default function Page() {
 
   const {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
-    send, sendTyping, toggleReaction, channels, activeChannel, switchChannel, createChannel
+    send, sendTyping, toggleReaction, togglePin,
+    channels, activeChannel, switchChannel, createChannel,
+    pinnedMessages,
   } = useChat(mounted ? username : null)
 
   const typingUsers = useMemo(() => Object.keys(typing), [typing])
   const isReady = status === 'open' && activeChannel !== ''
+  const pinnedIds = useMemo(() => new Set(pinnedMessages.map((p) => p.id).filter(Boolean) as number[]), [pinnedMessages])
 
   const join = (name: string) => {
     localStorage.setItem(STORAGE_KEY, name)
@@ -65,13 +68,15 @@ export default function Page() {
               onlineCount={users.length}
               me={username}
               onLogout={changeName}
-              onAvatarChange={() => setAvatarKey((k) => k + 1)}
+              onAvatarChange={() => {}}
             />
             <div className="flex flex-col flex-1 min-w-0">
               <ChatHeader
                 channelName={activeChannel || 'นกพิราบ'}
                 onlineCount={users.length}
                 status={status}
+                onOpenPinned={() => setShowPinned(true)}
+                pinnedCount={pinnedMessages.length}
               />
               {!isReady ? (
                 <ChatSkeleton />
@@ -94,13 +99,15 @@ export default function Page() {
                     onLoadMore={loadMore}
                     onReply={setReplyTo}
                     onReact={toggleReaction}
+                    onPin={togglePin}
+                    pinnedIds={pinnedIds}
                     scrollTrigger={activeChannel}
                   />
                   <MessageInput
                     onSend={handleSend}
                     onTyping={sendTyping}
                     disabled={status !== 'open'}
-                    placeholder={`ส่งข้อความใน #${activeChannel || 'นกพิราบ'}`}
+                    placeholder={`ส่งข้อความใน ${activeChannel || 'นกพิราบ'}`}
                     replyTo={replyTo}
                     onCancelReply={() => setReplyTo(null)}
                   />
@@ -114,6 +121,14 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      {showPinned && (
+        <PinnedPanel
+          pins={pinnedMessages}
+          onClose={() => setShowPinned(false)}
+          onUnpin={togglePin}
+        />
+      )}
     </main>
   )
 }

@@ -1,3 +1,16 @@
+'use client'
+
+export function FullScreenLoader() {
+  return (
+    <div className="h-[100dvh] w-screen grid place-items-center bg-aurora">
+      <div className="flex flex-col items-center gap-4 animate-scalein">
+        <div className="text-5xl font-black tracking-tighter text-white/90 select-none">T</div>
+        <div className="skeleton h-2.5 w-24 rounded-full" />
+      </div>
+    </div>
+  )
+}
+
 export function ChatSkeleton() {
   return (
     <div className="flex flex-col h-full w-full">
@@ -23,24 +36,6 @@ export function ChatSkeleton() {
 
       <div className="px-4 sm:px-6 pb-5 pt-3 border-t border-white/8">
         <div className="skeleton h-11 rounded-2xl w-full" />
-      </div>
-    </div>
-  )
-}
-
-export function FullScreenLoader() {
-  return (
-    <div className="h-[100dvh] w-screen grid place-items-center">
-      <div className="flex flex-col items-center gap-4 animate-scalein">
-        <div className="grid place-items-center w-16 h-16 rounded-2xl glass">
-          <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="text-white/80 animate-pulse">
-            <path d="M3 13c2-3 5-4 8-4 2 0 3 .5 4 1l4 2c1 .5 2 .5 3 0" />
-            <path d="M15 10c1.5-1 3-1.5 4.5-1 .5 1 .5 2 0 3" />
-            <circle cx="16.5" cy="10.5" r="0.6" fill="currentColor" />
-            <path d="M11 9c-1-2-3-3-5-2-1 1-1 2 0 3" />
-          </svg>
-        </div>
-        <div className="skeleton h-3 w-32 rounded-full" />
       </div>
     </div>
   )

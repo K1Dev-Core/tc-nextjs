@@ -7,7 +7,8 @@ import {
 import {
   saveMessage, getRecentHistory, touchUser,
   getChannelByName, getChannelById, createChannel, getChannels,
-  addReaction, removeReaction, getMessageChannelId, getReactionsForMessage, getReplyInfo
+  addReaction, removeReaction, getMessageChannelId, getReactionsForMessage, getReplyInfo,
+  pinMessage, unpinMessage, getPinnedMessages
 } from '../db/queries.js'
 
 const IDLE_TIMEOUT_MS = 60_000
@@ -101,6 +102,29 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
       return
     }
 
+    if (msg.type === 'pin' || msg.type === 'unpin') {
+      const messageId = msg.replyTo ?? 0
+      if (!messageId) return
+      const msgChannelId = getMessageChannelId(messageId)
+      if (msgChannelId === null) return
+
+      if (msg.type === 'pin') {
+        pinMessage(messageId, msgChannelId, username)
+      } else {
+        unpinMessage(messageId, msgChannelId)
+      }
+
+      const pins = getPinnedMessages(msgChannelId)
+      broadcast({
+        type: 'pins_update',
+        channel: getChannelById(msgChannelId)?.name,
+        username: '',
+        timestamp: new Date().toISOString(),
+        pins,
+      }, msgChannelId)
+      return
+    }
+
     if (msg.type !== 'message' && msg.type !== 'reply') return
 
     const content = (msg.content ?? '').trim().slice(0, MAX_CONTENT)
@@ -155,6 +179,7 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
 
 function sendHistory(ws: WebSocket, channelId: number): void {
   const history = getRecentHistory(channelId)
+  const pins = getPinnedMessages(channelId)
   const ch = getChannelById(channelId)
   ws.send(JSON.stringify({
     type: 'history',
@@ -162,6 +187,7 @@ function sendHistory(ws: WebSocket, channelId: number): void {
     username: '',
     timestamp: new Date().toISOString(),
     history,
+    pins,
   }))
 }
 

@@ -1,7 +1,8 @@
 export type MessageType =
   | 'message' | 'join' | 'leave' | 'typing' | 'users' | 'history'
   | 'channels' | 'channel_switch' | 'channel_created' | 'create_channel'
-  | 'reply' | 'react' | 'unreact'
+  | 'reply' | 'react' | 'unreact' | 'reaction_update'
+  | 'pin' | 'unpin' | 'pins_update'
 
 export interface FileMeta {
   url: string
@@ -31,6 +32,9 @@ export interface ChatMessage {
   replyToUsername?: string
   emoji?: string
   reactions?: ReactionInfo[]
+  pinnedBy?: string
+  pinnedAt?: string
+  pins?: ChatMessage[]
 }
 
 export interface MessageRow {

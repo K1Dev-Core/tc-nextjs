@@ -197,3 +197,43 @@ export function createChannel(name: string, description?: string): ChannelRow {
   ).run(name, description ?? null)
   return getChannelById(Number(result.lastInsertRowid))!
 }
+
+export function pinMessage(messageId: number, channelId: number, pinnedBy: string): boolean {
+  try {
+    getDb().prepare(
+      'INSERT OR IGNORE INTO pinned_messages (message_id, channel_id, pinned_by) VALUES (?, ?, ?)'
+    ).run(messageId, channelId, pinnedBy)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function unpinMessage(messageId: number, channelId: number): boolean {
+  try {
+    getDb().prepare(
+      'DELETE FROM pinned_messages WHERE message_id = ? AND channel_id = ?'
+    ).run(messageId, channelId)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function getPinnedMessages(channelId: number): ChatMessage[] {
+  const rows = getDb().prepare(
+    `SELECT m.id, m.username, m.content, m.file_json, m.channel_id, m.reply_to, m.created_at
+     FROM pinned_messages p
+     JOIN messages m ON p.message_id = m.id
+     WHERE p.channel_id = ?
+     ORDER BY p.pinned_at DESC`
+  ).all(channelId) as unknown as MessageRow[]
+  return batchEnrich(rows)
+}
+
+export function isPinned(messageId: number, channelId: number): boolean {
+  const row = getDb().prepare(
+    'SELECT 1 FROM pinned_messages WHERE message_id = ? AND channel_id = ?'
+  ).get(messageId, channelId)
+  return !!row
+}
