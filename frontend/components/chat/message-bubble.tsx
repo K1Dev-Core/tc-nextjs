@@ -2,7 +2,7 @@
 
 import { memo, useState, useCallback, type ReactNode } from 'react'
 import type { LineMessage, ReactionInfo } from '@/lib/types'
-import { avatarColors, formatTime, initials } from '@/lib/avatar'
+import { formatTime, avatarEmojiUrl } from '@/lib/avatar'
 import { Attachment } from './attachment'
 import { CodeBlock } from './code-block'
 import { ReactionPicker } from './reaction-picker'
@@ -204,13 +204,10 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
 }
 
 function MiniAvatar({ name }: { name: string }) {
-  const [from, to] = avatarColors(name)
+  const url = avatarEmojiUrl(name)
   return (
-    <div
-      className="w-8 h-8 rounded-full grid place-items-center text-[11px] font-semibold text-white/90 shrink-0"
-      style={{ background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)` }}
-    >
-      {initials(name)}
+    <div className="w-8 h-8 rounded-full grid place-items-center bg-white/6 border border-white/8 shrink-0 overflow-hidden">
+      <img src={url} alt={name} width={24} height={24} loading="lazy" className="pointer-events-none" />
     </div>
   )
 }

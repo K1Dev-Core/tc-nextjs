@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
 import { ShuffleIcon } from '@/components/ui/icons'
+import { avatarEmojiUrl } from '@/lib/avatar'
 
 const ADJ = ['ตื่น', 'ง่วง', 'หิว', 'ขี้เกียจ', 'มึน', 'ชิล', 'โคตร', 'หรรษา', 'เละ', 'โย่ว', 'ปุ๊บ', 'แจ่ม', 'ฟรุ้ง', 'จ๋อย', 'โบ๋', 'ติ่ง', 'เบา', 'กุ๋ย', 'หวิว', 'ปลิ้ว']
 const NOUN = ['นก', 'แมว', 'หมา', 'ปลา', 'หนู', 'กวาง', 'กระต่าย', 'หมี', 'เสือ', 'ลิง', 'หมาจิ้งจอก', 'ตุ๊กแก', 'เม่น', 'ตัวเต่า', 'ปู', 'ปลาหมึก', 'ผึ้ง', 'ตัวบุ้ง', 'แมลงปอ', 'จิ้งจก']
@@ -22,6 +23,7 @@ interface UsernameModalProps {
 
 export function UsernameModal({ initial, roomName, onJoin }: UsernameModalProps) {
   const [value, setValue] = useState(initial ?? randomName())
+  const previewAvatar = useMemo(() => avatarEmojiUrl(value || 'guest'), [value])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,8 +39,8 @@ export function UsernameModal({ initial, roomName, onJoin }: UsernameModalProps)
         className="glass rounded-3xl w-full max-w-md p-6 sm:p-7 animate-slidein relative"
       >
         <div className="flex items-center gap-3 mb-5">
-          <div className="grid place-items-center w-12 h-12 rounded-2xl bg-white/10 border border-white/10">
-            <PigeonMark size={26} className="text-white/90" />
+          <div className="grid place-items-center w-12 h-12 rounded-2xl bg-white/10 border border-white/10 overflow-hidden">
+            <img src={previewAvatar} alt="avatar" width={32} height={32} className="pointer-events-none" />
           </div>
           <div>
             <h1 className="text-lg font-semibold tracking-tight">เข้าห้อง {roomName}</h1>

@@ -61,6 +61,8 @@ export default function Page() {
               onSelect={switchChannel}
               onCreate={createChannel}
               onlineCount={users.length}
+              me={username}
+              onLogout={changeName}
             />
             <div className="flex flex-col flex-1 min-w-0">
               <ChatHeader

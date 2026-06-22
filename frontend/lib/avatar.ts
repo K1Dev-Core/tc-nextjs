@@ -1,3 +1,5 @@
+import { QUICK_EMOJIS, emojiUrl } from './emoji'
+
 const AVATAR_PALETTE = [
   ['#ffd6a5', '#fb8b24'],
   ['#a0c4ff', '#3a6ea5'],
@@ -22,6 +24,14 @@ function hash(str: string): number {
 
 export function avatarColors(name: string): [string, string] {
   return AVATAR_PALETTE[hash(name) % AVATAR_PALETTE.length] as [string, string]
+}
+
+export function avatarEmoji(name: string): string {
+  return QUICK_EMOJIS[hash(name) % QUICK_EMOJIS.length]
+}
+
+export function avatarEmojiUrl(name: string): string {
+  return emojiUrl(avatarEmoji(name))
 }
 
 export function statusColor(name: string): string {

@@ -1,5 +1,7 @@
+'use client'
+
 import { memo } from 'react'
-import { avatarColors, initials } from '@/lib/avatar'
+import { avatarEmojiUrl } from '@/lib/avatar'
 
 interface AvatarProps {
   name: string
@@ -8,19 +10,26 @@ interface AvatarProps {
 }
 
 function AvatarBase({ name, size = 40, className = '' }: AvatarProps) {
-  const [from, to] = avatarColors(name)
+  const url = avatarEmojiUrl(name)
+  const pad = Math.max(2, Math.floor(size * 0.1))
   return (
     <div
-      className={`relative shrink-0 rounded-full grid place-items-center font-semibold text-white/90 select-none ${className}`}
+      className={`relative shrink-0 rounded-full grid place-items-center select-none ${className}`}
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
-        fontSize: size * 0.36,
-        boxShadow: '0 4px 12px -4px rgba(0,0,0,0.5)',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      {initials(name)}
+      <img
+        src={url}
+        alt={name}
+        width={size - pad * 2}
+        height={size - pad * 2}
+        loading="lazy"
+        className="rounded-full pointer-events-none"
+      />
     </div>
   )
 }
