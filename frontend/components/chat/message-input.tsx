@@ -59,6 +59,14 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
     if (file) handleFile(file)
   }
 
+  const onPaste = (e: React.ClipboardEvent) => {
+    const files = e.clipboardData.files
+    if (files.length > 0 && !disabled && !loading) {
+      e.preventDefault()
+      handleFile(files[0])
+    }
+  }
+
   const insertEmoji = (emoji: string) => {
     const el = taRef.current
     if (!el) {
@@ -191,6 +199,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
           value={value}
           disabled={disabled}
           onChange={(e) => { setValue(e.target.value); onTyping() }}
+          onPaste={onPaste}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
           }}
@@ -209,7 +218,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
       </div>
       <div className="mt-1.5 px-1 text-[10px] text-white/25 hidden sm:flex items-center justify-between">
         <span>Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัด</span>
-        <span>ลากไฟล์มาวางเพื่ออัปโหลด · สูงสุด 50MB</span>
+        <span>ลากไฟล์มาวาง หรือ Ctrl+V เพื่อวาง · สูงสุด 50MB</span>
       </div>
     </div>
   )
