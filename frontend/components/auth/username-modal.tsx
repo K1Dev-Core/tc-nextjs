@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
 import { ShuffleIcon } from '@/components/ui/icons'
+import { AVATAR_EMOJIS, emojiUrlFromChar } from '@/lib/emoji'
 import { avatarEmojiUrl } from '@/lib/avatar'
 
 const ADJ = ['ตื่น', 'ง่วง', 'หิว', 'ขี้เกียจ', 'มึน', 'ชิล', 'โคตร', 'หรรษา', 'เละ', 'โย่ว', 'ปุ๊บ', 'แจ่ม', 'ฟรุ้ง', 'จ๋อย', 'โบ๋', 'ติ่ง', 'เบา', 'กุ๋ย', 'หวิว', 'ปลิ้ว']
@@ -23,7 +24,11 @@ interface UsernameModalProps {
 
 export function UsernameModal({ initial, roomName, onJoin }: UsernameModalProps) {
   const [value, setValue] = useState(initial ?? randomName())
-  const previewAvatar = useMemo(() => avatarEmojiUrl(value || 'guest'), [value])
+  const [emojiSeed, setEmojiSeed] = useState(() => Math.floor(Math.random() * AVATAR_EMOJIS.length))
+  const previewAvatar = useMemo(() => {
+    const emoji = AVATAR_EMOJIS[emojiSeed % AVATAR_EMOJIS.length]
+    return emojiUrlFromChar(emoji) || avatarEmojiUrl(value || 'guest')
+  }, [emojiSeed, value])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,7 +65,7 @@ export function UsernameModal({ initial, roomName, onJoin }: UsernameModalProps)
           />
           <button
             type="button"
-            onClick={() => setValue(randomName())}
+            onClick={() => { setValue(randomName()); setEmojiSeed(Math.floor(Math.random() * AVATAR_EMOJIS.length)) }}
             className="grid place-items-center w-12 h-12 rounded-xl glass-soft text-white/60 hover:text-white/90 transition shrink-0"
             title="สุ่มชื่อ"
             aria-label="สุ่มชื่อ"

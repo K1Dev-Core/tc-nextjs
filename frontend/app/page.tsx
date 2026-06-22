@@ -98,6 +98,9 @@ export default function Page() {
 
   const changeName = () => {
     localStorage.removeItem(STORAGE_KEY)
+    setGuestLines(chat.lines)
+    setGuestChannels(chat.channels)
+    setGuestActive(chat.activeChannel || guestActive)
     setUsername(null)
   }
 
