@@ -6,7 +6,7 @@ import { formatTime, avatarEmojiUrl } from '@/lib/avatar'
 import { Attachment } from './attachment'
 import { CodeBlock } from './code-block'
 import { ReactionPicker } from './reaction-picker'
-import { emojiUrl, emojiUrlFromChar } from '@/lib/emoji'
+import { emojiUrl, emojiUrlFromChar, EMOJI_MAP } from '@/lib/emoji'
 import { PinIcon } from '@/components/ui/icons'
 
 interface MessageBubbleProps {
@@ -48,6 +48,44 @@ function renderContent(content: string): ReactNode[] {
   return nodes
 }
 
+function renderTextWithEmoji(text: string, baseKey: number): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let key = baseKey
+  let buf = ''
+
+  for (let i = 0; i < text.length;) {
+    const cp = text.codePointAt(i)!
+    const char = String.fromCodePoint(cp)
+    const charLen = cp > 0xFFFF ? 2 : 1
+
+    let matched = false
+    if (i + charLen < text.length) {
+      const twoChar = text.slice(i, i + charLen + (text.codePointAt(i + charLen)! > 0xFFFF ? 2 : 1))
+      const url = emojiUrlFromChar(twoChar)
+      if (url) {
+        if (buf) { nodes.push(<span key={`t-${key++}`}>{buf}</span>); buf = '' }
+        nodes.push(<img key={`e-${key++}`} src={url} alt={twoChar} width={20} height={20} className="inline-block align-middle -mt-0.5 select-none" loading="lazy" />)
+        i += twoChar.length
+        matched = true
+      }
+    }
+
+    if (!matched) {
+      const url = emojiUrlFromChar(char)
+      if (url) {
+        if (buf) { nodes.push(<span key={`t-${key++}`}>{buf}</span>); buf = '' }
+        nodes.push(<img key={`e-${key++}`} src={url} alt={char} width={20} height={20} className="inline-block align-middle -mt-0.5 select-none" loading="lazy" />)
+      } else {
+        buf += char
+      }
+      i += charLen
+    }
+  }
+  if (buf) nodes.push(<span key={`t-${key++}`}>{buf}</span>)
+  if (nodes.length === 0) nodes.push(<span key={`t-${key}`}>{text}</span>)
+  return nodes
+}
+
 function renderInline(text: string, baseKey: number): ReactNode[] {
   const nodes: ReactNode[] = []
   let lastIndex = 0
@@ -58,18 +96,19 @@ function renderInline(text: string, baseKey: number): ReactNode[] {
 
   while ((match = INLINE_RE.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      nodes.push(<span key={`t-${key++}`}>{text.slice(lastIndex, match.index)}</span>)
+      nodes.push(...renderTextWithEmoji(text.slice(lastIndex, match.index), key))
+      key += 100
     }
     nodes.push(<code key={`ic-${key++}`} className="inline-code">{match[1]}</code>)
     lastIndex = match.index + match[0].length
   }
 
   if (lastIndex < text.length) {
-    nodes.push(<span key={`t-${key++}`}>{text.slice(lastIndex)}</span>)
+    nodes.push(...renderTextWithEmoji(text.slice(lastIndex), key))
   }
 
   if (nodes.length === 0) {
-    nodes.push(<span key={`t-${key}`}>{text}</span>)
+    nodes.push(...renderTextWithEmoji(text, key))
   }
 
   return nodes

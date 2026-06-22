@@ -46,7 +46,8 @@ function migrate(d: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS users (
       username TEXT PRIMARY KEY,
       last_seen TEXT NOT NULL DEFAULT (datetime('now')),
-      message_count INTEGER NOT NULL DEFAULT 0
+      message_count INTEGER NOT NULL DEFAULT 0,
+      avatar TEXT
     );
 
     CREATE TABLE IF NOT EXISTS reactions (

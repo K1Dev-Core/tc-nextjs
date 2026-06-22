@@ -237,3 +237,86 @@ export function isPinned(messageId: number, channelId: number): boolean {
   ).get(messageId, channelId)
   return !!row
 }
+
+// --- Avatar ---
+export function getUserAvatar(username: string): string | null {
+  const row = getDb().prepare('SELECT avatar FROM users WHERE username = ?').get(username) as { avatar: string | null } | undefined
+  return row?.avatar ?? null
+}
+
+export function setUserAvatar(username: string, avatar: string | null): void {
+  const db = getDb()
+  db.prepare(
+    `INSERT INTO users (username, last_seen, avatar) VALUES (?, datetime('now'), ?)
+     ON CONFLICT(username) DO UPDATE SET avatar = ?, last_seen = datetime('now')`
+  ).run(username, avatar, avatar)
+}
+
+// --- Admin: users ---
+export function adminGetAllUsers(): { username: string; last_seen: string; message_count: number; avatar: string | null }[] {
+  return getDb().prepare(
+    'SELECT username, last_seen, message_count, avatar FROM users ORDER BY last_seen DESC'
+  ).all() as any[]
+}
+
+export function adminDeleteUser(username: string, deleteMessages: boolean): void {
+  const db = getDb()
+  if (deleteMessages) {
+    db.prepare('DELETE FROM reactions WHERE username = ?').run(username)
+    db.prepare('DELETE FROM messages WHERE username = ?').run(username)
+  }
+  db.prepare('DELETE FROM users WHERE username = ?').run(username)
+}
+
+export function adminGetMessageCountForUser(username: string): number {
+  const row = getDb().prepare('SELECT COUNT(*) as n FROM messages WHERE username = ?').get(username) as { n: number }
+  return row?.n ?? 0
+}
+
+// --- Admin: channels ---
+export function adminCreateChannel(name: string, description: string | null): { id: number; name: string; description: string | null } {
+  const db = getDb()
+  const result = db.prepare('INSERT INTO channels (name, description) VALUES (?, ?)').run(name, description)
+  return db.prepare('SELECT id, name, description FROM channels WHERE id = ?').get(Number(result.lastInsertRowid)) as any
+}
+
+export function adminUpdateChannel(id: number, name: string, description: string | null): boolean {
+  try {
+    getDb().prepare('UPDATE channels SET name = ?, description = ? WHERE id = ?').run(name, description, id)
+    return true
+  } catch { return false }
+}
+
+export function adminDeleteChannel(id: number): void {
+  const db = getDb()
+  db.prepare('DELETE FROM pinned_messages WHERE channel_id = ?').run(id)
+  db.prepare('DELETE FROM messages WHERE channel_id = ?').run(id)
+  db.prepare('DELETE FROM channels WHERE id = ?').run(id)
+}
+
+// --- Admin: messages ---
+export function adminSearchMessages(search: string, channelId?: number, page: number = 0): { messages: any[]; total: number } {
+  const db = getDb()
+  const limit = 50
+  const offset = page * limit
+  let where = search ? `WHERE m.content LIKE ?` : 'WHERE 1=1'
+  const params: any[] = search ? [`%${search}%`] : []
+  if (channelId) {
+    where += ` AND m.channel_id = ?`
+    params.push(channelId)
+  }
+  const total = (db.prepare(`SELECT COUNT(*) as n FROM messages m ${where}`).get(...params) as { n: number }).n
+  const messages = db.prepare(
+    `SELECT m.id, m.username, m.content, m.file_json, m.channel_id, m.reply_to, m.created_at, c.name as channel_name
+     FROM messages m JOIN channels c ON m.channel_id = c.id
+     ${where} ORDER BY m.id DESC LIMIT ${limit} OFFSET ${offset}`
+  ).all(...params) as any[]
+  return { messages, total }
+}
+
+export function adminDeleteMessage(id: number): void {
+  const db = getDb()
+  db.prepare('DELETE FROM reactions WHERE message_id = ?').run(id)
+  db.prepare('DELETE FROM pinned_messages WHERE message_id = ?').run(id)
+  db.prepare('DELETE FROM messages WHERE id = ?').run(id)
+}

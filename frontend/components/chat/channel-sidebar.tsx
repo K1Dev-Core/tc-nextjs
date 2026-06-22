@@ -6,6 +6,7 @@ import { PigeonMark } from '@/components/ui/pigeon-mark'
 import { HashIcon, CloseIcon, MenuIcon, EditIcon } from '@/components/ui/icons'
 import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar } from '@/lib/avatar'
 import { EMOJI_CATEGORIES, EMOJI_CATEGORY_NAMES, emojiUrlFromChar } from '@/lib/emoji'
+import { API_BASE } from '@/lib/room'
 
 interface ChannelSidebarProps {
   channels: ChannelInfo[]
@@ -43,11 +44,14 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
 
   const currentAvatarUrl = me ? avatarEmojiUrl(me + avatarVersion) : ''
 
-  const handlePickAvatar = (emoji: string) => {
+  const handlePickAvatar = async (emoji: string) => {
     setCustomAvatar(emoji)
     setAvatarVersion((v) => v + 1)
     onAvatarChange()
     setShowAvatarPicker(false)
+    if (me) {
+      try { await fetch(`${API_BASE}/avatar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: me, avatar: emoji }) }) } catch {}
+    }
   }
 
   const sidebarContent = (
