@@ -1,4 +1,6 @@
-import { QUICK_EMOJIS, emojiUrl } from './emoji'
+import { QUICK_EMOJIS, emojiUrl, emojiUrlFromChar, AVATAR_EMOJIS } from './emoji'
+
+const AVATAR_STORAGE_KEY = 'aura:avatar'
 
 const AVATAR_PALETTE = [
   ['#ffd6a5', '#fb8b24'],
@@ -26,12 +28,32 @@ export function avatarColors(name: string): [string, string] {
   return AVATAR_PALETTE[hash(name) % AVATAR_PALETTE.length] as [string, string]
 }
 
+export function getCustomAvatar(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(AVATAR_STORAGE_KEY)
+}
+
+export function setCustomAvatar(emoji: string): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(AVATAR_STORAGE_KEY, emoji)
+}
+
+export function clearCustomAvatar(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(AVATAR_STORAGE_KEY)
+}
+
 export function avatarEmoji(name: string): string {
-  return QUICK_EMOJIS[hash(name) % QUICK_EMOJIS.length]
+  const custom = getCustomAvatar()
+  if (custom) return custom
+  return AVATAR_EMOJIS[hash(name) % AVATAR_EMOJIS.length]
 }
 
 export function avatarEmojiUrl(name: string): string {
-  return emojiUrl(avatarEmoji(name))
+  const emoji = avatarEmoji(name)
+  const url = emojiUrlFromChar(emoji)
+  if (url) return url
+  return emojiUrl(QUICK_EMOJIS[hash(name) % QUICK_EMOJIS.length])
 }
 
 export function statusColor(name: string): string {

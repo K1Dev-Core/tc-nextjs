@@ -17,6 +17,8 @@ export default function Page() {
   const [username, setUsername] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<LineMessage | null>(null)
 
+  const [avatarKey, setAvatarKey] = useState(0)
+
   useEffect(() => {
     setMounted(true)
     const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
@@ -63,6 +65,7 @@ export default function Page() {
               onlineCount={users.length}
               me={username}
               onLogout={changeName}
+              onAvatarChange={() => setAvatarKey((k) => k + 1)}
             />
             <div className="flex flex-col flex-1 min-w-0">
               <ChatHeader

@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { SendIcon, PaperclipIcon, SpinnerIcon, CloseIcon } from '@/components/ui/icons'
+import { SendIcon, PaperclipIcon, SpinnerIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
 import { formatBytes, isImage } from '@/lib/file-utils'
 import type { FileMeta, LineMessage } from '@/lib/types'
+import { EmojiPickerModal } from './emoji-picker-modal'
 
 interface MessageInputProps {
   onSend: (content: string, file?: FileMeta, replyTo?: number) => void
@@ -19,6 +20,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
   const [value, setValue] = useState('')
   const [pendingFile, setPendingFile] = useState<FileMeta | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { loading, progress, error, upload, reset } = useUpload()
@@ -55,6 +57,24 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
     if (disabled || loading) return
     const file = e.dataTransfer.files?.[0]
     if (file) handleFile(file)
+  }
+
+  const insertEmoji = (emoji: string) => {
+    const el = taRef.current
+    if (!el) {
+      setValue((v) => v + emoji)
+      return
+    }
+    const start = el.selectionStart ?? value.length
+    const end = el.selectionEnd ?? value.length
+    const newValue = value.slice(0, start) + emoji + value.slice(end)
+    setValue(newValue)
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + emoji.length
+      el.setSelectionRange(pos, pos)
+      resize()
+    })
   }
 
   const submit = () => {
@@ -138,6 +158,13 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         </div>
       )}
 
+      {showEmoji && (
+        <EmojiPickerModal
+          onPick={insertEmoji}
+          onClose={() => setShowEmoji(false)}
+        />
+      )}
+
       <div className="glass-soft rounded-2xl flex items-end gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 focus-within:ring-2 focus-within:ring-white/15 transition">
         <button
           type="button"
@@ -149,6 +176,15 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
           <PaperclipIcon className="w-5 h-5" />
         </button>
         <input ref={fileInputRef} type="file" onChange={onFileChange} className="hidden" />
+        <button
+          type="button"
+          onClick={() => setShowEmoji(true)}
+          disabled={disabled}
+          className="grid place-items-center w-9 h-9 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
+          aria-label="อิโมจิ"
+        >
+          <EmojiIcon className="w-5 h-5" />
+        </button>
         <textarea
           ref={taRef}
           rows={1}

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import type { ChannelInfo } from '@/lib/types'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
-import { HashIcon, CloseIcon, MenuIcon } from '@/components/ui/icons'
-import { avatarEmojiUrl } from '@/lib/avatar'
+import { HashIcon, CloseIcon, MenuIcon, EditIcon } from '@/components/ui/icons'
+import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar } from '@/lib/avatar'
+import { EMOJI_CATEGORIES, EMOJI_CATEGORY_NAMES, emojiUrlFromChar } from '@/lib/emoji'
 
 interface ChannelSidebarProps {
   channels: ChannelInfo[]
@@ -14,11 +15,15 @@ interface ChannelSidebarProps {
   onlineCount: number
   me: string | null
   onLogout: () => void
+  onAvatarChange: () => void
 }
 
-export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout }: ChannelSidebarProps) {
+function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout, onAvatarChange }: ChannelSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [avatarCat, setAvatarCat] = useState(EMOJI_CATEGORY_NAMES[0])
+  const [avatarVersion, setAvatarVersion] = useState(0)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,6 +39,15 @@ export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, on
   const handleSelect = (name: string) => {
     onSelect(name)
     setMobileOpen(false)
+  }
+
+  const currentAvatarUrl = me ? avatarEmojiUrl(me + avatarVersion) : ''
+
+  const handlePickAvatar = (emoji: string) => {
+    setCustomAvatar(emoji)
+    setAvatarVersion((v) => v + 1)
+    onAvatarChange()
+    setShowAvatarPicker(false)
   }
 
   const sidebarContent = (
@@ -80,7 +94,7 @@ export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, on
         >
           {me && (
             <div className="w-8 h-8 rounded-full overflow-hidden bg-white/6 border border-white/8 shrink-0">
-              <img src={avatarEmojiUrl(me)} alt={me} width={24} height={24} loading="lazy" className="pointer-events-none mx-auto mt-1" />
+              <img src={currentAvatarUrl} alt={me} width={24} height={24} loading="lazy" className="pointer-events-none mx-auto mt-1" key={avatarVersion} />
             </div>
           )}
           <div className="min-w-0 flex-1 text-left">
@@ -91,8 +105,15 @@ export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, on
           </div>
         </button>
 
-        {showUserMenu && (
+        {showUserMenu && !showAvatarPicker && (
           <div className="absolute bottom-full left-2 right-2 mb-1 glass rounded-xl py-1 animate-slideup z-50">
+            <button
+              onClick={() => setShowAvatarPicker(true)}
+              className="w-full px-3 py-2 text-left text-[13px] text-white/80 hover:bg-white/5 rounded-lg transition flex items-center gap-2"
+            >
+              <EditIcon className="w-4 h-4 text-white/50" />
+              แก้ไขโปรไฟล์
+            </button>
             <button
               onClick={() => { setShowUserMenu(false); onLogout() }}
               className="w-full px-3 py-2 text-left text-[13px] text-red-300/90 hover:bg-white/5 rounded-lg transition flex items-center gap-2"
@@ -104,6 +125,45 @@ export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, on
               </svg>
               ออกจากระบบ
             </button>
+          </div>
+        )}
+
+        {showAvatarPicker && (
+          <div className="absolute bottom-full left-2 right-2 mb-1 glass rounded-xl animate-slideup z-50 overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
+              <span className="text-[12px] font-medium text-white/80">เลือกอวตาร</span>
+              <button
+                onClick={() => setShowAvatarPicker(false)}
+                className="grid place-items-center w-6 h-6 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition"
+              >
+                <CloseIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex gap-1 px-2 py-1.5 border-b border-white/8 overflow-x-auto scroll-slim">
+              {EMOJI_CATEGORY_NAMES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setAvatarCat(cat)}
+                  className={`px-2 py-1 rounded-lg text-[10px] whitespace-nowrap transition
+                    ${avatarCat === cat ? 'bg-white/15 text-white/90' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className="max-h-48 overflow-y-auto scroll-slim p-2">
+              <div className="grid grid-cols-6 gap-1">
+                {(EMOJI_CATEGORIES[avatarCat] || []).map((e) => (
+                  <button
+                    key={e.char + e.name}
+                    onClick={() => handlePickAvatar(e.char)}
+                    className="aspect-square grid place-items-center rounded-lg hover:bg-white/10 active:scale-90 transition"
+                  >
+                    <img src={emojiUrlFromChar(e.char)} alt={e.name} width={24} height={24} loading="lazy" className="select-none pointer-events-none" />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -148,3 +208,5 @@ export function ChannelSidebar({ channels, activeChannel, onSelect, onCreate, on
     </>
   )
 }
+
+export const ChannelSidebar = memo(ChannelSidebarBase)
