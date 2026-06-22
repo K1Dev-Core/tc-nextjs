@@ -44,6 +44,35 @@ body {
   }
 }
 
+@keyframes shimmer-skeleton {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.5s infinite;
+}
+
+@keyframes scalein {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scalein {
+  animation: scalein 0.2s ease-out;
+}
+
+@keyframes slideup {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slideup {
+  animation: slideup 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Frosted glass panel */
 .glass {
   background: rgba(20, 22, 30, 0.55);

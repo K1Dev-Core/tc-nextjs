@@ -6,6 +6,7 @@ import { avatarColors, formatTime, initials } from '@/lib/avatar'
 import { Attachment } from './attachment'
 import { CodeBlock } from './code-block'
 import { ReactionPicker } from './reaction-picker'
+import { emojiUrl } from '@/lib/emoji'
 
 interface MessageBubbleProps {
   line: LineMessage
@@ -92,20 +93,25 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function ReactionBadges({ reactions, me, onReact }: { reactions: ReactionInfo[]; me: string; onReact: (id: number, emoji: string) => void }) {
+function ReactionBadges({ reactions, me, onReact, messageId }: { reactions: ReactionInfo[]; me: string; onReact: (id: number, emoji: string) => void; messageId: number }) {
   if (!reactions || reactions.length === 0) return null
   return (
     <div className="flex flex-wrap gap-1 mt-1">
       {reactions.map((r) => {
         const mine = r.users.includes(me)
+        const url = emojiUrl(r.emoji)
         return (
           <button
             key={r.emoji}
-            onClick={() => onReact(0, r.emoji)}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition
+            onClick={() => onReact(messageId, r.emoji)}
+            className={`flex items-center gap-1 pl-1 pr-2 py-0.5 rounded-full text-[11px] transition
               ${mine ? 'bg-white/15 text-white/90' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
           >
-            <span>{r.emoji}</span>
+            {url ? (
+              <img src={url} alt={r.emoji} width={16} height={16} loading="lazy" className="select-none" />
+            ) : (
+              <span>{r.emoji}</span>
+            )}
             <span>{r.users.length}</span>
           </button>
         )
@@ -131,10 +137,6 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
   const showMeta = !grouped
   const hasReactions = line.reactions && line.reactions.length > 0
 
-  const handleReact = (messageId: number, emoji: string) => {
-    if (line.dbId) onReact(line.dbId, emoji)
-  }
-
   return (
     <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
       <div className="w-8 shrink-0">
@@ -147,9 +149,10 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
           </div>
         )}
 
-        {line.replyToContent && (
-          <div className={`mb-1 px-3 py-1.5 rounded-lg text-[11px] text-white/40 border-l-2 border-white/20 bg-white/5 max-w-full truncate ${mine ? 'self-end' : 'self-start'}`}>
-            <span className="font-medium text-white/55">{line.replyToUsername}</span>: {line.replyToContent}
+        {line.replyTo && line.replyToContent && (
+          <div className={`mb-1 px-3 py-1.5 rounded-lg text-[11px] text-white/40 border-l-2 border-white/20 bg-white/5 max-w-full ${mine ? 'self-end' : 'self-start'}`}>
+            <span className="font-medium text-white/55">{line.replyToUsername}</span>
+            <span className="block truncate max-w-[250px]">{line.replyToContent}</span>
           </div>
         )}
 
@@ -168,7 +171,9 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
 
         {line.file && line.content && <Attachment file={line.file} />}
 
-        {hasReactions && <ReactionBadges reactions={line.reactions!} me={me} onReact={onReact} />}
+        {hasReactions && line.dbId && (
+          <ReactionBadges reactions={line.reactions!} me={me} onReact={onReact} messageId={line.dbId} />
+        )}
 
         <div className={`flex items-center gap-0.5 mt-0.5 relative ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
           {showPicker && line.dbId && (
@@ -182,7 +187,7 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact }: MessageBubbl
             className="opacity-0 group-hover:opacity-100 transition px-1.5 py-1 rounded-lg text-[12px] text-white/40 hover:text-white/90 hover:bg-white/5"
             aria-label="รีแอคชั่น"
           >
-            😊
+            <img src={emojiUrl('😂')} alt="react" width={16} height={16} loading="lazy" className="select-none" />
           </button>
           <button
             onClick={() => onReply(line)}

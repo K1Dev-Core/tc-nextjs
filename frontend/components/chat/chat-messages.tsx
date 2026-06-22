@@ -53,13 +53,16 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   }, [lines, typingUsers])
 
   return (
-    <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scroll-slim px-3 sm:px-5 md:px-8 py-5 space-y-1.5">
+    <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scroll-slim px-3 sm:px-5 md:px-8 py-5 space-y-2">
       {hasMore && (
         <div className="flex justify-center py-3">
           {loadingMore ? (
-            <SpinnerIcon className="w-5 h-5 text-white/40 animate-spin" />
+            <div className="flex items-center gap-2 text-[11px] text-white/40 animate-fadein">
+              <SpinnerIcon className="w-4 h-4 animate-spin" />
+              กำลังโหลด…
+            </div>
           ) : (
-            <button onClick={onLoadMore} className="text-[11px] text-white/40 hover:text-white/70 transition">
+            <button onClick={onLoadMore} className="text-[11px] text-white/40 hover:text-white/70 transition px-3 py-1 rounded-full hover:bg-white/5">
               โหลดข้อความเก่ากว่า
             </button>
           )}

@@ -6,6 +6,7 @@ import { ChatHeader } from '@/components/chat/chat-header'
 import { ChatMessages } from '@/components/chat/chat-messages'
 import { MessageInput } from '@/components/chat/message-input'
 import { UsernameModal } from '@/components/auth/username-modal'
+import { ChatSkeleton, FullScreenLoader } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { LineMessage } from '@/lib/types'
 
@@ -28,6 +29,7 @@ export default function Page() {
   } = useChat(mounted ? username : null)
 
   const typingUsers = useMemo(() => Object.keys(typing), [typing])
+  const isReady = status === 'open' && activeChannel !== ''
 
   const join = (name: string) => {
     localStorage.setItem(STORAGE_KEY, name)
@@ -45,7 +47,7 @@ export default function Page() {
   }
 
   if (!mounted) {
-    return <div className="h-full w-full" />
+    return <FullScreenLoader />
   }
 
   return (
@@ -66,32 +68,38 @@ export default function Page() {
                 onlineCount={users.length}
                 status={status}
               />
-              {status !== 'open' && (
-                <div className="px-4 sm:px-6 py-2 text-[11px] text-amber-200/80 bg-amber-500/10 border-b border-amber-300/10 flex items-center justify-between shrink-0">
-                  <span>{status === 'connecting' ? 'กำลังเชื่อมต่อใหม่…' : 'ขาดการเชื่อมต่อ — ลองใหม่'}</span>
-                  <button onClick={changeName} className="text-white/50 hover:text-white/80 transition underline underline-offset-2">
-                    เปลี่ยนชื่อ
-                  </button>
-                </div>
+              {!isReady ? (
+                <ChatSkeleton />
+              ) : (
+                <>
+                  {status !== 'open' && (
+                    <div className="px-4 sm:px-6 py-2 text-[11px] text-amber-200/80 bg-amber-500/10 border-b border-amber-300/10 flex items-center justify-between shrink-0">
+                      <span>{status === 'connecting' ? 'กำลังเชื่อมต่อใหม่…' : 'ขาดการเชื่อมต่อ — ลองใหม่'}</span>
+                      <button onClick={changeName} className="text-white/50 hover:text-white/80 transition underline underline-offset-2">
+                        เปลี่ยนชื่อ
+                      </button>
+                    </div>
+                  )}
+                  <ChatMessages
+                    lines={lines}
+                    typingUsers={typingUsers}
+                    me={username}
+                    hasMore={hasMore}
+                    loadingMore={loadingMore}
+                    onLoadMore={loadMore}
+                    onReply={setReplyTo}
+                    onReact={react}
+                  />
+                  <MessageInput
+                    onSend={handleSend}
+                    onTyping={sendTyping}
+                    disabled={status !== 'open'}
+                    placeholder={`ส่งข้อความใน #${activeChannel || 'นกพิราบ'}`}
+                    replyTo={replyTo}
+                    onCancelReply={() => setReplyTo(null)}
+                  />
+                </>
               )}
-              <ChatMessages
-                lines={lines}
-                typingUsers={typingUsers}
-                me={username}
-                hasMore={hasMore}
-                loadingMore={loadingMore}
-                onLoadMore={loadMore}
-                onReply={setReplyTo}
-                onReact={react}
-              />
-              <MessageInput
-                onSend={handleSend}
-                onTyping={sendTyping}
-                disabled={status !== 'open'}
-                placeholder={`ส่งข้อความใน #${activeChannel || 'นกพิราบ'}`}
-                replyTo={replyTo}
-                onCancelReply={() => setReplyTo(null)}
-              />
             </div>
           </>
         ) : (

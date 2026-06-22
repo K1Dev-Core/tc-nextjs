@@ -17,7 +17,7 @@ export function getReactionsForMessage(messageId: number): ReactionInfo[] {
   return [...map.entries()].map(([emoji, users]) => ({ emoji, users }))
 }
 
-function getReplyInfo(replyTo: number | null): { content: string; username: string } | null {
+export function getReplyInfo(replyTo: number | null): { content: string; username: string } | null {
   if (!replyTo) return null
   const row = getDb().prepare(
     'SELECT username, content FROM messages WHERE id = ?'

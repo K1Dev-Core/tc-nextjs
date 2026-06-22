@@ -7,7 +7,7 @@ import {
 import {
   saveMessage, getRecentHistory, touchUser,
   getChannelByName, getChannelById, createChannel, getChannels,
-  addReaction, removeReaction, getMessageChannelId, getReactionsForMessage
+  addReaction, removeReaction, getMessageChannelId, getReactionsForMessage, getReplyInfo
 } from '../db/queries.js'
 
 const IDLE_TIMEOUT_MS = 60_000
@@ -112,6 +112,16 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
     const timestamp = new Date().toISOString()
     const id = saveMessage(username, content, file, client.channelId, replyTo, timestamp)
 
+    let replyToContent: string | undefined
+    let replyToUsername: string | undefined
+    if (replyTo) {
+      const replyInfo = getReplyInfo(replyTo)
+      if (replyInfo) {
+        replyToContent = replyInfo.content
+        replyToUsername = replyInfo.username
+      }
+    }
+
     const ch = getChannelById(client.channelId)
     const out: ChatMessage = {
       type: 'message',
@@ -122,6 +132,8 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
       file,
       timestamp,
       replyTo: replyTo ?? undefined,
+      replyToContent,
+      replyToUsername,
     }
     broadcast(out, client.channelId)
   })
