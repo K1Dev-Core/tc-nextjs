@@ -1,0 +1,19 @@
+{
+  "name": "chat-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.3"
+  }
+}
