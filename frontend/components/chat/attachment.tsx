@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import type { FileMeta } from '@/lib/types'
 import { fileUrl, isImage, isVideo, isAudio, formatBytes } from '@/lib/file-utils'
 import { DownloadIcon, FileIcon, CloseIcon, ImageIcon } from '@/components/ui/icons'
@@ -34,12 +35,12 @@ function ImageAttachment({ file, onOpen, lightbox, onClose }: { file: FileMeta; 
           <span className="text-[10px] text-white/90 truncate">{file.name}</span>
         </div>
       </div>
-      {lightbox && <Lightbox file={file} onClose={onClose} />}
+      {lightbox && createPortal(<Lightbox file={file} onClose={onClose} />, document.body)}
     </>
   )
 }
 
-function Lightbox({ file, onClose }: { file: FileMeta; onClose: () => void }) {
+export function Lightbox({ file, onClose }: { file: FileMeta; onClose: () => void }) {
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])

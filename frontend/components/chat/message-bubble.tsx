@@ -236,7 +236,7 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
   const linkUrl = useMemo(() => line.content ? extractUrl(line.content) : '', [line.content])
 
   return (
-    <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 72px' }}>
+    <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
       <div className="w-8 shrink-0">
         {showMeta && !mine && <MiniAvatar name={line.username} />}
       </div>

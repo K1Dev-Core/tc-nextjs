@@ -6,6 +6,9 @@ import { CloseIcon, PinIcon, GridIcon, ListIcon, NoteIcon, SearchIcon } from '@/
 import { fileUrl, isImage, isVideo, formatBytes } from '@/lib/file-utils'
 import { avatarEmojiUrl, formatTime } from '@/lib/avatar'
 import { emojiUrlFromChar } from '@/lib/emoji'
+import { Attachment, Lightbox } from './attachment'
+import { LinkPreview } from './link-preview'
+import { extractUrl } from './message-bubble'
 
 type ViewMode = 'note' | 'chat' | 'gallery'
 
@@ -106,6 +109,7 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
 }
 
 function PinnedNote({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) => void }) {
+  const linkUrl = pin.content ? extractUrl(pin.content) : ''
   return (
     <div className="glass-soft rounded-xl p-3 group relative">
       <button
@@ -121,14 +125,14 @@ function PinnedNote({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) 
         <span className="text-[10px] text-white/25">{formatTime(pin.timestamp)}</span>
       </div>
       {pin.content && <div className="text-[13px] text-white/80 whitespace-pre-wrap break-words line-clamp-4">{pin.content}</div>}
-      {pin.file && isImage(pin.file) && (
-        <img src={fileUrl(pin.file.url)} alt={pin.file.name} className="mt-2 rounded-lg max-h-32 object-cover" loading="lazy" />
-      )}
+      {pin.file && <Attachment file={pin.file} />}
+      {linkUrl && <LinkPreview url={linkUrl} />}
     </div>
   )
 }
 
 function PinnedChatItem({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) => void }) {
+  const linkUrl = pin.content ? extractUrl(pin.content) : ''
   return (
     <div className="flex items-start gap-2.5 group">
       <img src={avatarEmojiUrl(pin.username)} alt={pin.username} width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
@@ -138,15 +142,8 @@ function PinnedChatItem({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: numb
           <span className="text-[10px] text-white/30">{formatTime(pin.timestamp)}</span>
         </div>
         {pin.content && <div className="text-[13px] text-white/70 whitespace-pre-wrap break-words">{pin.content}</div>}
-        {pin.file && isImage(pin.file) && (
-          <img src={fileUrl(pin.file.url)} alt={pin.file.name} className="mt-1.5 rounded-lg max-h-48 object-cover" loading="lazy" />
-        )}
-        {pin.file && !isImage(pin.file) && (
-          <a href={fileUrl(pin.file.url)} download={pin.file.name} className="mt-1.5 flex items-center gap-2 glass-soft rounded-lg px-2.5 py-1.5 text-[12px] text-white/70 hover:bg-white/10 transition w-fit">
-            <span className="truncate">{pin.file.name}</span>
-            <span className="text-white/30 text-[10px]">{formatBytes(pin.file.size)}</span>
-          </a>
-        )}
+        {pin.file && <Attachment file={pin.file} />}
+        {linkUrl && <LinkPreview url={linkUrl} />}
       </div>
       <button
         onClick={() => pin.id && onUnpin(pin.id)}
@@ -160,25 +157,29 @@ function PinnedChatItem({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: numb
 }
 
 function PinnedGalleryItem({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) => void }) {
+  const [open, setOpen] = useState(false)
   if (!pin.file) return null
   return (
-    <div className="relative group aspect-square rounded-lg overflow-hidden">
-      <img src={fileUrl(pin.file.url)} alt={pin.file.name} className="w-full h-full object-cover" loading="lazy" />
-      <button
-        onClick={() => pin.id && onUnpin(pin.id)}
-        className="absolute top-1.5 right-1.5 grid place-items-center w-6 h-6 rounded-lg bg-black/60 text-white/70 hover:text-red-300 transition opacity-0 group-hover:opacity-100"
-        aria-label="ถอนหมุด"
-      >
-        <CloseIcon className="w-3.5 h-3.5" />
-      </button>
-      <a href={fileUrl(pin.file.url)} download={pin.file.name} className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-lg bg-black/60 text-white/70 hover:text-white transition opacity-0 group-hover:opacity-100" aria-label="ดาวน์โหลด">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-      </a>
-    </div>
+    <>
+      <div className="relative group aspect-square rounded-lg overflow-hidden cursor-pointer" onClick={() => isImage(pin.file!) && setOpen(true)}>
+        <img src={fileUrl(pin.file.url)} alt={pin.file.name} className="w-full h-full object-cover" loading="lazy" />
+        <button
+          onClick={(e) => { e.stopPropagation(); pin.id && onUnpin(pin.id) }}
+          className="absolute top-1.5 right-1.5 grid place-items-center w-6 h-6 rounded-lg bg-black/60 text-white/70 hover:text-red-300 transition opacity-0 group-hover:opacity-100"
+          aria-label="ถอนหมุด"
+        >
+          <CloseIcon className="w-3.5 h-3.5" />
+        </button>
+        <a href={fileUrl(pin.file.url)} download={pin.file.name} onClick={(e) => e.stopPropagation()} className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-lg bg-black/60 text-white/70 hover:text-white transition opacity-0 group-hover:opacity-100" aria-label="ดาวน์โหลด">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </a>
+      </div>
+      {open && <Lightbox file={pin.file} onClose={() => setOpen(false)} />}
+    </>
   )
 }
 

@@ -26,6 +26,8 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevHeight = useRef(0)
   const atBottom = useRef(true)
+  const isFirstLoad = useRef(true)
+  const prevChannelRef = useRef(scrollTrigger)
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current
@@ -51,6 +53,15 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
     })
   }, [hasMore, loadingMore, onLoadMore])
 
+  // Channel switch or initial load: force instant jump to bottom
+  useEffect(() => {
+    if (prevChannelRef.current !== scrollTrigger) {
+      prevChannelRef.current = scrollTrigger
+      isFirstLoad.current = true
+      atBottom.current = true
+    }
+  }, [scrollTrigger])
+
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -58,11 +69,19 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
       const newHeight = el.scrollHeight
       el.scrollTop = newHeight - prevHeight.current
       prevHeight.current = 0
+      return
+    }
+    // Instant scroll on first load / channel switch — no smooth animation
+    if (isFirstLoad.current && lines.length > 0) {
+      isFirstLoad.current = false
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight
+      })
     }
   }, [lines])
 
   useEffect(() => {
-    if (atBottom.current) {
+    if (atBottom.current && !isFirstLoad.current) {
       scrollToBottom('smooth')
     }
   }, [lines, typingUsers, scrollToBottom])
