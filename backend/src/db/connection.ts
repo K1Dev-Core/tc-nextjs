@@ -18,6 +18,7 @@ export function getDb(): DatabaseSync {
   db.exec('PRAGMA cache_size = -64000')
   db.exec('PRAGMA foreign_keys = ON')
   migrate(db)
+  patchSchema(db)
   seedChannels(db)
   return db
 }
@@ -78,6 +79,12 @@ const DEFAULT_CHANNELS = [
   { name: 'tech', description: 'เทคโนโลยี โค้ด ไอที' },
   { name: 'random', description: 'เรื่องสุ่ม ขำขำ' },
 ]
+
+function patchSchema(d: DatabaseSync) {
+  try {
+    d.exec('ALTER TABLE users ADD COLUMN avatar TEXT')
+  } catch {}
+}
 
 function seedChannels(d: DatabaseSync) {
   const count = d.prepare('SELECT COUNT(*) as n FROM channels').get() as { n: number }

@@ -5,7 +5,7 @@ import { getDb, closeDb } from './db/connection.js'
 import { handleConnection, startHeartbeat } from './ws/handler.js'
 import { getOnlineUsernames } from './ws/hub.js'
 import { handleUpload, serveFile } from './db/upload.js'
-import { getHistoryBefore, getChannels, getChannelByName, getPinnedMessages, getChannelById, getUserAvatar, setUserAvatar, adminGetAllUsers, adminDeleteUser, adminGetMessageCountForUser, adminCreateChannel, adminUpdateChannel, adminDeleteChannel, adminSearchMessages, adminDeleteMessage } from './db/queries.js'
+import { getRecentHistory, getHistoryBefore, getChannels, getChannelByName, getPinnedMessages, getChannelById, getUserAvatar, setUserAvatar, adminGetAllUsers, adminDeleteUser, adminGetMessageCountForUser, adminCreateChannel, adminUpdateChannel, adminDeleteChannel, adminSearchMessages, adminDeleteMessage } from './db/queries.js'
 
 const PORT = Number(process.env.PORT ?? 8080)
 const HOST = process.env.HOST ?? '0.0.0.0'
@@ -269,7 +269,7 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'channel not found' }))
       return
     }
-    const messages = before > 0 ? getHistoryBefore(channel.id, before) : []
+    const messages = before > 0 ? getHistoryBefore(channel.id, before) : getRecentHistory(channel.id)
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ messages }))
     return
