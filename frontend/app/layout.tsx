@@ -11,13 +11,13 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#0a0c12',
+  themeColor: '#14161e',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className="dark">
-      <body>
+      <body className="bg-aurora">
         <CodeBackground />
         {children}
       </body>

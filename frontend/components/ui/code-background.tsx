@@ -1,6 +1,6 @@
 'use client'
 
-// ponytail: static code string, duplicated for seamless loop. Dim enough not to clutter.
+// ponytail: static code string, duplicated for seamless loop. Dim dark text on the pastel aurora.
 const CODE = `import { WebSocketServer } from 'ws'
 import { handleConnection } from './ws/handler.js'
 
@@ -156,32 +156,15 @@ const sfx = {
 export function CodeBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none">
-      {/* Dark base */}
-      <div className="absolute inset-0 bg-[#0a0c12]" />
-      {/* Subtle aurora glow on top of base, very dim */}
+      {/* Scrolling code only — the pastel bg-aurora lives on <body> behind this.
+          Dark text on light pastel, very dim so it's texture not clutter. */}
       <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          background:
-            'radial-gradient(120% 80% at 15% 20%, #1a2540 0%, transparent 50%), radial-gradient(120% 90% at 85% 15%, #2a1a40 0%, transparent 55%), radial-gradient(140% 100% at 50% 100%, #102030 0%, transparent 60%)',
-        }}
-      />
-      {/* Scrolling code, dim, loops seamlessly via duplicated content */}
-      <div
-        className="absolute left-0 right-0 top-0 text-[11px] leading-[1.6] font-mono text-white/[0.045] whitespace-pre"
+        className="absolute left-0 right-0 top-0 text-[11px] leading-[1.6] font-mono text-slate-900/[0.07] whitespace-pre"
         style={{ animation: 'scroll-code 90s linear infinite' }}
       >
         <pre className="m-0 p-0">{CODE}</pre>
         <pre className="m-0 p-0">{CODE}</pre>
       </div>
-      {/* Soft vignette so center stays clean */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, rgba(10,12,18,0.5) 0%, rgba(10,12,18,0.85) 70%, rgba(10,12,18,0.95) 100%)',
-        }}
-      />
     </div>
   )
 }
