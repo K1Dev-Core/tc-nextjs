@@ -50,6 +50,12 @@ body {
   100% { transform: translateY(-50%); }
 }
 
+/* Reverse scroll (right column moves downward) */
+@keyframes scroll-code-rev {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg-aurora,
   [style*='scroll-code'] {

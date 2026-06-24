@@ -156,11 +156,28 @@ const sfx = {
 export function CodeBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none">
-      {/* Scrolling code only — the pastel bg-aurora lives on <body> behind this.
-          Dark text on light pastel, very dim so it's texture not clutter. */}
+      {/* Two code columns — left and right — center stays clear.
+          bg-aurora (pastel) lives on <body> behind this. */}
+      {/* Left column: scrolls up, fades on the right edge toward center */}
       <div
-        className="absolute left-0 right-0 top-0 text-[11px] leading-[1.6] font-mono text-slate-900/[0.07] whitespace-pre"
-        style={{ animation: 'scroll-code 90s linear infinite' }}
+        className="absolute left-0 top-0 h-full w-[38vw] text-[11px] leading-[1.6] font-mono text-slate-900/[0.07] whitespace-pre overflow-hidden"
+        style={{
+          animation: 'scroll-code 90s linear infinite',
+          maskImage: 'linear-gradient(to right, #000 60%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, #000 60%, transparent 100%)',
+        }}
+      >
+        <pre className="m-0 p-0">{CODE}</pre>
+        <pre className="m-0 p-0">{CODE}</pre>
+      </div>
+      {/* Right column: scrolls down, fades on the left edge toward center */}
+      <div
+        className="absolute right-0 top-0 h-full w-[38vw] text-[11px] leading-[1.6] font-mono text-slate-900/[0.07] whitespace-pre overflow-hidden text-right"
+        style={{
+          animation: 'scroll-code-rev 110s linear infinite',
+          maskImage: 'linear-gradient(to left, #000 60%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, #000 60%, transparent 100%)',
+        }}
       >
         <pre className="m-0 p-0">{CODE}</pre>
         <pre className="m-0 p-0">{CODE}</pre>
