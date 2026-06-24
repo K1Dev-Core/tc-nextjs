@@ -7,15 +7,18 @@ export function fileUrl(url: string): string {
 }
 
 export function isImage(file: FileMeta): boolean {
-  return file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(file.name)
+  const t = file.type ?? ''
+  return t.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(file.name)
 }
 
 export function isVideo(file: FileMeta): boolean {
-  return file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+  const t = file.type ?? ''
+  return t.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
 }
 
 export function isAudio(file: FileMeta): boolean {
-  return file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|flac)$/i.test(file.name)
+  const t = file.type ?? ''
+  return t.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|flac)$/i.test(file.name)
 }
 
 export function formatBytes(bytes: number): string {
