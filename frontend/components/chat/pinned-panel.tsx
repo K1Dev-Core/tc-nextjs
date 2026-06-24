@@ -23,8 +23,9 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return pins
-    return pins.filter((p) =>
+    const sorted = [...pins].sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+    if (!q) return sorted
+    return sorted.filter((p) =>
       p.content?.toLowerCase().includes(q) ||
       p.username.toLowerCase().includes(q) ||
       p.file?.name.toLowerCase().includes(q)
@@ -34,7 +35,7 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
   const images = useMemo(() => filtered.filter((p) => p.file && isImage(p.file)), [filtered])
 
   return (
-    <div className="flex flex-col flex-1 min-w-0">
+    <div className="flex flex-col flex-1 min-w-0 min-h-0">
       <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-b border-white/8 shrink-0">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/35" />

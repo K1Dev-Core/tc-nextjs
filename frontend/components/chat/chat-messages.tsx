@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import type { LineMessage } from '@/lib/types'
 import { MessageBubble } from './message-bubble'
 import { TypingIndicator } from './typing-indicator'
@@ -62,7 +62,9 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
     }
   }, [scrollTrigger])
 
-  useEffect(() => {
+  // useLayoutEffect: runs synchronously after DOM mutation, before paint.
+  // Instant jump on first load / channel switch — no smooth animation.
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
     if (prevHeight.current > 0 && lines.length > 0) {
@@ -71,15 +73,18 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
       prevHeight.current = 0
       return
     }
-    // Instant scroll on first load / channel switch — no smooth animation
     if (isFirstLoad.current && lines.length > 0) {
       isFirstLoad.current = false
+      // Double rAF ensures layout is complete (images pending, etc.)
       requestAnimationFrame(() => {
-        el.scrollTop = el.scrollHeight
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight
+        })
       })
     }
   }, [lines])
 
+  // Smooth scroll for subsequent messages only (not first load)
   useEffect(() => {
     if (atBottom.current && !isFirstLoad.current) {
       scrollToBottom('smooth')

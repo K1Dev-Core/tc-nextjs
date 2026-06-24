@@ -146,8 +146,8 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="min-h-[100dvh] w-screen bg-[#14161e] text-white/90">
-      <header className="sticky top-0 z-20 border-b border-white/8 bg-black/40 backdrop-blur-xl">
+    <div className="h-[100dvh] w-screen overflow-hidden bg-[#14161e] text-white/90 flex flex-col">
+      <header className="shrink-0 border-b border-white/8 bg-black/40 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
           <div className="flex items-center gap-2.5">
             <div className="grid place-items-center w-8 h-8 rounded-lg bg-white/8 border border-white/10 overflow-hidden">
@@ -165,7 +165,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <nav className="sticky top-14 z-10 border-b border-white/8 bg-[#14161e]/80 backdrop-blur-xl">
+      <nav className="shrink-0 border-b border-white/8 bg-[#14161e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto scroll-slim">
           {tabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
@@ -179,20 +179,22 @@ export default function AdminPage() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        {tab === 'dashboard' && <Dashboard stats={stats} loading={loading} />}
-        {tab === 'users' && <UsersTab users={users} api={api} onRefresh={loadUsers} />}
-        {tab === 'channels' && <ChannelsTab channels={channels} api={api} onRefresh={loadChannels}
-          newName={newChName} setNewName={setNewChName}
-          newDesc={newChDesc} setNewDesc={setNewChDesc}
-          editCh={editCh} setEditCh={setEditCh}
-        />}
-        {tab === 'messages' && <MessagesTab messages={messages} total={msgTotal} page={msgPage}
-          search={msgSearch} setSearch={setMsgSearch}
-          channel={msgChannel} setChannel={setMsgChannel}
-          setPage={setMsgPage}
-          channels={channels} api={api} onRefresh={loadMessages}
-        />}
+      <main className="flex-1 overflow-y-auto scroll-slim">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          {tab === 'dashboard' && <Dashboard stats={stats} loading={loading} />}
+          {tab === 'users' && <UsersTab users={users} api={api} onRefresh={loadUsers} />}
+          {tab === 'channels' && <ChannelsTab channels={channels} api={api} onRefresh={loadChannels}
+            newName={newChName} setNewName={setNewChName}
+            newDesc={newChDesc} setNewDesc={setNewChDesc}
+            editCh={editCh} setEditCh={setEditCh}
+          />}
+          {tab === 'messages' && <MessagesTab messages={messages} total={msgTotal} page={msgPage}
+            search={msgSearch} setSearch={setMsgSearch}
+            channel={msgChannel} setChannel={setMsgChannel}
+            setPage={setMsgPage}
+            channels={channels} api={api} onRefresh={loadMessages}
+          />}
+        </div>
       </main>
     </div>
   )
