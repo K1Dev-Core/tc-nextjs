@@ -12,6 +12,7 @@ import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
 import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
+import { sfx } from '@/lib/sounds'
 
 const STORAGE_KEY = 'aura:username'
 const PINNED_CHANNEL = '__pinned__'
@@ -89,6 +90,7 @@ export default function Page() {
     localStorage.setItem(STORAGE_KEY, name)
     setUsername(name)
     setShowLogin(false)
+    sfx.login()
     const res = await fetch(`${API_BASE}/avatar?username=${encodeURIComponent(name)}`)
     if (res.ok) {
       const data = await res.json()
@@ -123,7 +125,7 @@ export default function Page() {
 
   return (
     <main className="h-[100dvh] w-screen flex items-stretch justify-center">
-      <div className="relative flex h-full w-full max-w-7xl glass rounded-none sm:rounded-2xl overflow-hidden">
+      <div className="relative flex h-full w-full max-w-7xl glass overflow-hidden">
         <ChannelSidebar
           channels={isGuest ? guestChannels : chat.channels}
           activeChannel={isGuest ? guestActive : chat.activeChannel}

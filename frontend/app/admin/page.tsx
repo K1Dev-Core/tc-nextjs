@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { API_BASE } from '@/lib/room'
+import { PigeonMark } from '@/components/ui/pigeon-mark'
 
 type Tab = 'dashboard' | 'users' | 'channels' | 'messages'
 
@@ -93,11 +94,16 @@ export default function AdminPage() {
 
   if (!authed) {
     return (
-      <div className="h-[100dvh] w-screen grid place-items-center bg-[#14161e]">
-        <form onSubmit={login} className="glass rounded-3xl w-full max-w-sm p-7 animate-slidein">
-          <div className="text-center mb-6">
-            <div className="text-2xl font-bold tracking-tight text-white/90">ผู้ดูแลระบบ</div>
-            <div className="text-xs text-white/45 mt-1">กรอกรหัสผ่านเพื่อเข้าสู่ระบบ</div>
+      <div className="h-[100dvh] w-screen grid place-items-center p-4">
+        <div className="absolute inset-0 bg-[#14161e]" />
+        <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.15), transparent 60%)' }} />
+        <form onSubmit={login} className="glass rounded-3xl w-full max-w-sm p-7 animate-slidein relative">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="grid place-items-center w-14 h-14 rounded-2xl bg-white/8 border border-white/10 overflow-hidden mb-3">
+              <PigeonMark size={32} className="text-white/90" />
+            </div>
+            <h1 className="text-lg font-bold tracking-tight text-white/90">นกพิราบ · แอดมิน</h1>
+            <p className="text-xs text-white/45 mt-1">กรอกรหัสผ่านเพื่อเข้าสู่ระบบ</p>
           </div>
           <input
             autoFocus
@@ -116,37 +122,65 @@ export default function AdminPage() {
     )
   }
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'dashboard', label: 'แดชบอร์ด' },
-    { id: 'users', label: 'ผู้ใช้' },
-    { id: 'channels', label: 'ห้อง' },
-    { id: 'messages', label: 'ข้อความ' },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: 'dashboard', label: 'แดชบอร์ด', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <rect x="3" y="3" width="7" height="9" /><rect x="14" y="3" width="7" height="5" /><rect x="14" y="12" width="7" height="9" /><rect x="3" y="16" width="7" height="5" />
+      </svg>
+    ) },
+    { id: 'users', label: 'ผู้ใช้', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ) },
+    { id: 'channels', label: 'ห้อง', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" />
+      </svg>
+    ) },
+    { id: 'messages', label: 'ข้อความ', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ) },
   ]
 
   return (
     <div className="min-h-[100dvh] w-screen bg-[#14161e] text-white/90">
-      <header className="border-b border-white/8 bg-black/30">
+      <header className="sticky top-0 z-20 border-b border-white/8 bg-black/40 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="grid place-items-center w-8 h-8 rounded-lg bg-white/8 border border-white/10 overflow-hidden">
+              <PigeonMark size={18} className="text-white/90" />
+            </div>
             <span className="font-bold text-sm">นกพิราบ · แอดมิน</span>
-            {loading && <span className="text-[10px] text-white/30 animate-pulse">กำลังโหลด…</span>}
+            {loading && <span className="text-[10px] text-white/30 animate-pulse ml-2">กำลังโหลด…</span>}
           </div>
-          <button onClick={() => setAuthed(false)} className="text-xs text-white/40 hover:text-white/80 transition">ออกจากระบบ</button>
+          <div className="flex items-center gap-3">
+            <button onClick={loadAll} className="text-xs text-white/40 hover:text-white/80 transition px-2 py-1 rounded-lg hover:bg-white/5">
+              {loading ? '…' : 'รีเฟรชทั้งหมด'}
+            </button>
+            <button onClick={() => setAuthed(false)} className="text-xs text-white/40 hover:text-red-300 transition">ออกจากระบบ</button>
+          </div>
         </div>
       </header>
 
-      <nav className="border-b border-white/8 bg-black/10">
+      <nav className="sticky top-14 z-10 border-b border-white/8 bg-[#14161e]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto scroll-slim">
           {tabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-4 py-3 text-xs whitespace-nowrap transition border-b-2 ${tab === t.id ? 'border-white/60 text-white/90' : 'border-transparent text-white/40 hover:text-white/70'}`}
-            >{t.label}</button>
+              className={`flex items-center gap-1.5 px-4 py-3 text-xs whitespace-nowrap transition border-b-2
+                ${tab === t.id ? 'border-emerald-400/60 text-white/90' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
           ))}
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {tab === 'dashboard' && <Dashboard stats={stats} onRefresh={loadStats} loading={loading} />}
+        {tab === 'dashboard' && <Dashboard stats={stats} loading={loading} />}
         {tab === 'users' && <UsersTab users={users} api={api} onRefresh={loadUsers} />}
         {tab === 'channels' && <ChannelsTab channels={channels} api={api} onRefresh={loadChannels}
           newName={newChName} setNewName={setNewChName}
@@ -164,23 +198,41 @@ export default function AdminPage() {
   )
 }
 
-function Dashboard({ stats, onRefresh, loading }: { stats: Stats | null; onRefresh: () => void; loading: boolean }) {
+function Dashboard({ stats, loading }: { stats: Stats | null; loading: boolean }) {
+  const cards = [
+    { label: 'ออนไลน์', value: stats?.online ?? '—', color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
+      </svg>
+    ) },
+    { label: 'ผู้ใช้ทั้งหมด', value: stats?.totalUsers ?? '—', color: 'text-sky-400', bg: 'bg-sky-400/10', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ) },
+    { label: 'ข้อความ', value: stats?.totalMessages ?? '—', color: 'text-violet-400', bg: 'bg-violet-400/10', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ) },
+    { label: 'ห้อง', value: stats?.totalChannels ?? '—', color: 'text-amber-400', bg: 'bg-amber-400/10', icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" />
+      </svg>
+    ) },
+  ]
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-white/70">ภาพรวม</h2>
-        <button onClick={onRefresh} className="text-xs text-white/40 hover:text-white/70 transition px-2 py-1 rounded-lg hover:bg-white/5">{loading ? '…' : 'รีเฟรช'}</button>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'ออนไลน์', value: stats?.online ?? '…' },
-          { label: 'ผู้ใช้ทั้งหมด', value: stats?.totalUsers ?? '…' },
-          { label: 'ข้อความ', value: stats?.totalMessages ?? '…' },
-          { label: 'ห้อง', value: stats?.totalChannels ?? '…' },
-        ].map((s) => (
-          <div key={s.label} className="glass rounded-2xl p-4 text-center">
-            <div className="text-2xl font-bold">{s.value}</div>
-            <div className="text-xs text-white/45 mt-1">{s.label}</div>
+      <h2 className="text-sm font-semibold text-white/70 mb-4">ภาพรวมระบบ</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {cards.map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-5 relative overflow-hidden">
+            <div className={`grid place-items-center w-10 h-10 rounded-xl ${c.bg} ${c.color} mb-3`}>
+              {c.icon}
+            </div>
+            <div className="text-2xl font-bold tracking-tight">{c.value}</div>
+            <div className="text-xs text-white/45 mt-0.5">{c.label}</div>
           </div>
         ))}
       </div>
@@ -199,30 +251,33 @@ function UsersTab({ users, api, onRefresh }: { users: AdminUser[]; api: any; onR
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-white/70">ผู้ใช้ ({users.length})</h2>
-      </div>
+      <h2 className="text-sm font-semibold text-white/70 mb-4">ผู้ใช้ ({users.length})</h2>
       <div className="space-y-2">
         {users.map((u) => (
-          <div key={u.username} className="glass-soft rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium truncate">{u.username}</div>
-              <div className="text-xs text-white/40">
-                {u.message_count} ข้อความ · ล่าสุด {u.last_seen ? new Date(u.last_seen + 'Z').toLocaleDateString('th-TH') : '-'}
+          <div key={u.username} className="glass rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 flex items-center gap-3">
+              <div className="grid place-items-center w-9 h-9 rounded-full bg-white/8 border border-white/10 shrink-0 text-xs font-bold text-white/60">
+                {u.username.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{u.username}</div>
+                <div className="text-xs text-white/40">
+                  {u.message_count} ข้อความ · ล่าสุด {u.last_seen ? new Date(u.last_seen + 'Z').toLocaleDateString('th-TH') : '-'}
+                </div>
               </div>
             </div>
             {confirm === u.username ? (
               <div className="flex items-center gap-1.5 shrink-0">
-                <button onClick={() => del(u.username, true)} className="text-xs px-2 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition whitespace-nowrap">ลบพร้อมข้อความ</button>
-                <button onClick={() => del(u.username, false)} className="text-xs px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition whitespace-nowrap">ลบผู้ใช้เท่านั้น</button>
-                <button onClick={() => setConfirm(null)} className="text-xs px-2 py-1 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
+                <button onClick={() => del(u.username, true)} className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition whitespace-nowrap">ลบทั้งหมด</button>
+                <button onClick={() => del(u.username, false)} className="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition whitespace-nowrap">เฉพาะผู้ใช้</button>
+                <button onClick={() => setConfirm(null)} className="text-xs px-2.5 py-1.5 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
               </div>
             ) : (
               <button onClick={() => setConfirm(u.username)} className="text-xs px-3 py-1.5 rounded-lg text-red-300/80 hover:bg-red-500/15 transition shrink-0">ลบ</button>
             )}
           </div>
         ))}
-        {users.length === 0 && <div className="text-center text-white/35 py-8 text-sm">ไม่มีผู้ใช้</div>}
+        {users.length === 0 && <div className="text-center text-white/35 py-12 text-sm">ไม่มีผู้ใช้</div>}
       </div>
     </div>
   )
@@ -258,12 +313,15 @@ function ChannelsTab({ channels, api, onRefresh, newName, setNewName, newDesc, s
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-white/70">ห้อง ({channels.length})</h2>
-      </div>
+      <h2 className="text-sm font-semibold text-white/70 mb-4">ห้อง ({channels.length})</h2>
 
-      <div className="glass-soft rounded-xl p-4 mb-6">
-        <div className="text-xs font-medium text-white/60 mb-3">สร้างห้องใหม่</div>
+      <div className="glass rounded-xl p-4 mb-6">
+        <div className="text-xs font-medium text-white/60 mb-3 flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          สร้างห้องใหม่
+        </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="ชื่อห้อง" maxLength={50}
             className="flex-1 glass-soft rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-white/15" />
@@ -275,13 +333,13 @@ function ChannelsTab({ channels, api, onRefresh, newName, setNewName, newDesc, s
       </div>
 
       {editCh && (
-        <div className="glass-soft rounded-xl p-4 mb-6">
-          <div className="text-xs font-medium text-white/60 mb-3">แก้ไขห้อง</div>
+        <div className="glass rounded-xl p-4 mb-6 border border-emerald-400/20">
+          <div className="text-xs font-medium text-emerald-300/80 mb-3">แก้ไขห้อง</div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input value={editCh.name} onChange={(e) => setEditCh({ ...editCh, name: e.target.value })} placeholder="ชื่อห้อง" maxLength={50}
-              className="flex-1 glass-soft rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-white/15" />
+              className="flex-1 glass-soft rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-emerald-400/20" />
             <input value={editCh.description ?? ''} onChange={(e) => setEditCh({ ...editCh, description: e.target.value || null })} placeholder="คำอธิบาย"
-              className="flex-1 glass-soft rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-white/15" />
+              className="flex-1 glass-soft rounded-xl px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-emerald-400/20" />
             <button onClick={update} disabled={!editCh.name.trim()}
               className="px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/30 disabled:opacity-40 transition">บันทึก</button>
             <button onClick={() => setEditCh(null)}
@@ -292,20 +350,20 @@ function ChannelsTab({ channels, api, onRefresh, newName, setNewName, newDesc, s
 
       <div className="space-y-2">
         {channels.map((ch) => (
-          <div key={ch.id} className="glass-soft rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <div key={ch.id} className="glass rounded-xl px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium truncate">{ch.name}</div>
-              {ch.description && <div className="text-xs text-white/40 truncate">{ch.description}</div>}
+              {ch.description && <div className="text-xs text-white/40 truncate mt-0.5">{ch.description}</div>}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={() => setEditCh(ch)} className="text-xs px-2 py-1.5 rounded-lg text-white/50 hover:bg-white/10 transition">แก้ไข</button>
+              <button onClick={() => setEditCh(ch)} className="text-xs px-2.5 py-1.5 rounded-lg text-white/50 hover:bg-white/10 transition">แก้ไข</button>
               {delConfirm === ch.id ? (
                 <>
-                  <button onClick={() => del(ch.id)} className="text-xs px-2 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">ยืนยันลบ</button>
-                  <button onClick={() => setDelConfirm(null)} className="text-xs px-2 py-1 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
+                  <button onClick={() => del(ch.id)} className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">ยืนยันลบ</button>
+                  <button onClick={() => setDelConfirm(null)} className="text-xs px-2.5 py-1.5 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
                 </>
               ) : (
-                <button onClick={() => setDelConfirm(ch.id)} className="text-xs px-2 py-1.5 rounded-lg text-red-300/80 hover:bg-red-500/15 transition">ลบ</button>
+                <button onClick={() => setDelConfirm(ch.id)} className="text-xs px-2.5 py-1.5 rounded-lg text-red-300/80 hover:bg-red-500/15 transition">ลบ</button>
               )}
             </div>
           </div>
@@ -335,9 +393,7 @@ function MessagesTab({ messages, total, page, search, setSearch, channel, setCha
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-white/70">ข้อความทั้งหมด ({total})</h2>
-      </div>
+      <h2 className="text-sm font-semibold text-white/70 mb-4">ข้อความทั้งหมด ({total})</h2>
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="flex-1 flex gap-2">
@@ -356,12 +412,12 @@ function MessagesTab({ messages, total, page, search, setSearch, channel, setCha
 
       <div className="space-y-2">
         {messages.map((m) => (
-          <div key={m.id} className="glass-soft rounded-xl px-4 py-3">
+          <div key={m.id} className="glass rounded-xl px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-white/70">{m.username}</span>
-                  <span className="text-[10px] text-white/30">{m.channel_name}</span>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs font-medium text-white/80">{m.username}</span>
+                  <span className="text-[10px] text-white/30 px-1.5 py-0.5 rounded bg-white/5">{m.channel_name}</span>
                   <span className="text-[10px] text-white/25">{new Date(m.created_at + 'Z').toLocaleString('th-TH')}</span>
                 </div>
                 <div className="text-xs text-white/60 whitespace-pre-wrap break-words line-clamp-3">
@@ -370,16 +426,16 @@ function MessagesTab({ messages, total, page, search, setSearch, channel, setCha
               </div>
               {delId === m.id ? (
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => del(m.id)} className="text-xs px-2 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">ยืนยัน</button>
-                  <button onClick={() => setDelId(null)} className="text-xs px-2 py-1 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
+                  <button onClick={() => del(m.id)} className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">ยืนยัน</button>
+                  <button onClick={() => setDelId(null)} className="text-xs px-2.5 py-1.5 rounded-lg text-white/40 hover:text-white/70 transition">ยกเลิก</button>
                 </div>
               ) : (
-                <button onClick={() => setDelId(m.id)} className="text-xs px-2 py-1 rounded-lg text-red-300/80 hover:bg-red-500/15 transition shrink-0">ลบ</button>
+                <button onClick={() => setDelId(m.id)} className="text-xs px-2.5 py-1.5 rounded-lg text-red-300/80 hover:bg-red-500/15 transition shrink-0">ลบ</button>
               )}
             </div>
           </div>
         ))}
-        {messages.length === 0 && <div className="text-center text-white/35 py-8 text-sm">ไม่มีข้อความ</div>}
+        {messages.length === 0 && <div className="text-center text-white/35 py-12 text-sm">ไม่มีข้อความ</div>}
       </div>
 
       {totalPages > 1 && (

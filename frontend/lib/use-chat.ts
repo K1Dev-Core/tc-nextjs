@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, FileMeta, LineMessage, ChannelInfo, ReactionInfo } from './types'
 import { WS_URL, API_BASE } from './room'
+import { sfx } from './sounds'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
@@ -105,6 +106,7 @@ export function useChat(username: string | null) {
         case 'message': {
           if (!m.content && !m.file) return
           setLines((prev) => [...prev, toLine(m, me)])
+          if (m.username !== me) sfx.receive()
           setTyping((prev) => {
             if (!prev[m.username]) return prev
             const next = { ...prev }
@@ -130,6 +132,7 @@ export function useChat(username: string | null) {
             ...prev,
             { id: nextId(), type: 'system', username: m.username, content: 'เข้าร่วม', timestamp: m.timestamp, mine: false },
           ])
+          sfx.join()
           break
         }
         case 'leave': {
@@ -137,6 +140,7 @@ export function useChat(username: string | null) {
             ...prev,
             { id: nextId(), type: 'system', username: m.username, content: 'ออกจากห้อง', timestamp: m.timestamp, mine: false },
           ])
+          sfx.leave()
           break
         }
         case 'users': {
@@ -212,6 +216,7 @@ export function useChat(username: string | null) {
     } else {
       ws.send(JSON.stringify({ type: 'message', content: text, file }))
     }
+    sfx.send()
   }, [])
 
   const sendTyping = useCallback(() => {
@@ -240,6 +245,7 @@ export function useChat(username: string | null) {
       ws.send(JSON.stringify({ type: 'unreact', replyTo: messageId, emoji }))
     } else {
       ws.send(JSON.stringify({ type: 'react', replyTo: messageId, emoji }))
+      sfx.react()
     }
   }, [])
 
@@ -251,6 +257,7 @@ export function useChat(username: string | null) {
       ws.send(JSON.stringify({ type: 'unpin', replyTo: messageId }))
     } else {
       ws.send(JSON.stringify({ type: 'pin', replyTo: messageId }))
+      sfx.pin()
     }
   }, [pinnedMessages])
 

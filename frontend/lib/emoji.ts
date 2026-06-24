@@ -1,4 +1,4 @@
-// ponytail: switched from Telegram to Fluent animated emojis
+// ponytail: GitHub animated Fluent emojis (APNG, ~800KB each but CDN-cached)
 const BASE = 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis'
 
 export const EMOJI_MAP: Record<string, { name: string; path: string }> = {

@@ -1,11 +1,12 @@
 'use client'
 
-import { memo, useState, useCallback, type ReactNode } from 'react'
+import { memo, useState, useCallback, useMemo, type ReactNode } from 'react'
 import type { LineMessage, ReactionInfo } from '@/lib/types'
 import { formatTime, avatarEmojiUrl } from '@/lib/avatar'
 import { Attachment } from './attachment'
 import { CodeBlock } from './code-block'
 import { ReactionPicker } from './reaction-picker'
+import { LinkPreview } from './link-preview'
 import { emojiUrl, emojiUrlFromChar, EMOJI_MAP } from '@/lib/emoji'
 import { PinIcon } from '@/components/ui/icons'
 
@@ -21,6 +22,27 @@ interface MessageBubbleProps {
 
 const FENCE_RE = /```(\w+)?\n?([\s\S]*?)```/g
 const INLINE_RE = /`([^`\n]+)`/g
+const URL_RE = /https?:\/\/[^\s<>"']+/gi
+
+export function extractUrl(text: string): string {
+  URL_RE.lastIndex = 0
+  const m = URL_RE.exec(text)
+  return m ? m[0] : ''
+}
+
+// ponytail: module-level cache, cap 2000 entries (FIFO eviction)
+const contentCache = new Map<string, ReactNode[]>()
+function renderContentCached(content: string): ReactNode[] {
+  let cached = contentCache.get(content)
+  if (cached) return cached
+  cached = renderContent(content)
+  if (contentCache.size > 2000) {
+    const first = contentCache.keys().next().value
+    if (first) contentCache.delete(first)
+  }
+  contentCache.set(content, cached)
+  return cached
+}
 
 function renderContent(content: string): ReactNode[] {
   const nodes: ReactNode[] = []
@@ -87,6 +109,39 @@ function renderTextWithEmoji(text: string, baseKey: number): ReactNode[] {
 }
 
 function renderInline(text: string, baseKey: number): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  let key = baseKey
+
+  URL_RE.lastIndex = 0
+
+  while ((match = URL_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(...renderInlineCode(text.slice(lastIndex, match.index), key))
+      key += 100
+    }
+    nodes.push(
+      <a key={`url-${key++}`} href={match[0]} target="_blank" rel="noopener noreferrer"
+         className="text-sky-400 hover:text-sky-300 underline decoration-sky-400/40 break-all">
+        {match[0]}
+      </a>
+    )
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(...renderInlineCode(text.slice(lastIndex), key))
+  }
+
+  if (nodes.length === 0) {
+    nodes.push(...renderInlineCode(text, key))
+  }
+
+  return nodes
+}
+
+function renderInlineCode(text: string, baseKey: number): ReactNode[] {
   const nodes: ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -178,9 +233,10 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
   const mine = line.mine
   const showMeta = !grouped
   const hasReactions = line.reactions && line.reactions.length > 0
+  const linkUrl = useMemo(() => line.content ? extractUrl(line.content) : '', [line.content])
 
   return (
-    <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`} style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 72px' }}>
       <div className="w-8 shrink-0">
         {showMeta && !mine && <MiniAvatar name={line.username} />}
       </div>
@@ -204,7 +260,7 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
               <div className={`px-3.5 py-2.5 text-[14px] leading-relaxed rounded-2xl whitespace-pre-wrap break-words
                 ${mine ? 'bubble-me rounded-br-md text-white' : 'bubble-them rounded-bl-md text-white/90'}
                 ${line.file ? 'mb-0' : ''}`}>
-                {renderContent(line.content)}
+                {renderContentCached(line.content)}
               </div>
             )}
             {line.file && !line.content && <Attachment file={line.file} />}
@@ -212,6 +268,8 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
         )}
 
         {line.file && line.content && <Attachment file={line.file} />}
+
+        {linkUrl && <LinkPreview url={linkUrl} />}
 
         {hasReactions && line.dbId && (
           <ReactionBadges reactions={line.reactions!} me={me} onReact={onReact} messageId={line.dbId} />

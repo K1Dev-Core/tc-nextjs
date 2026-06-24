@@ -44,9 +44,13 @@ export function clearCustomAvatar(): void {
 }
 
 export function avatarEmoji(name: string): string {
+  return AVATAR_EMOJIS[hash(name) % AVATAR_EMOJIS.length]
+}
+
+export function myAvatarEmoji(): string {
   const custom = getCustomAvatar()
   if (custom) return custom
-  return AVATAR_EMOJIS[hash(name) % AVATAR_EMOJIS.length]
+  return ''
 }
 
 export function avatarEmojiUrl(name: string): string {
@@ -54,6 +58,15 @@ export function avatarEmojiUrl(name: string): string {
   const url = emojiUrlFromChar(emoji)
   if (url) return url
   return emojiUrl(QUICK_EMOJIS[hash(name) % QUICK_EMOJIS.length])
+}
+
+export function myAvatarUrl(name: string): string {
+  const custom = getCustomAvatar()
+  if (custom) {
+    const url = emojiUrlFromChar(custom)
+    if (url) return url
+  }
+  return avatarEmojiUrl(name)
 }
 
 export function statusColor(name: string): string {

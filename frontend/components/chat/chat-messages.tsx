@@ -33,16 +33,22 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
     el.scrollTo({ top: el.scrollHeight, behavior })
   }, [])
 
+  // ponytail: rAF throttle, coalesces scroll events to one per frame
+  const rafRef = useRef(0)
   const handleScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-    atBottom.current = distFromBottom < 80
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0
+      const el = scrollRef.current
+      if (!el) return
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      atBottom.current = distFromBottom < 80
 
-    if (el.scrollTop < 60 && hasMore && !loadingMore) {
-      prevHeight.current = el.scrollHeight
-      onLoadMore()
-    }
+      if (el.scrollTop < 60 && hasMore && !loadingMore) {
+        prevHeight.current = el.scrollHeight
+        onLoadMore()
+      }
+    })
   }, [hasMore, loadingMore, onLoadMore])
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 import http from 'node:http'
+import https from 'node:https'
 import { URL } from 'node:url'
 import { WebSocketServer } from 'ws'
 import { getDb, closeDb } from './db/connection.js'
@@ -256,6 +257,77 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
       } catch { res.writeHead(400); res.end('invalid json') }
+    })
+    return
+  }
+
+  if (path === '/preview' && req.method === 'GET') {
+    const targetUrl = url.searchParams.get('url')
+    if (!targetUrl) { res.writeHead(400); res.end('missing url'); return }
+    let parsed: URL
+    try { parsed = new URL(targetUrl) } catch { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ url: targetUrl })); return }
+    if (!parsed.protocol.startsWith('http')) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ url: targetUrl })); return }
+
+    const client = parsed.protocol === 'https:' ? https : http
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+
+    client.get(parsed, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkPreview/1.0)', 'Accept': 'text/html' }, timeout: 5000 }, (proxyRes) => {
+      clearTimeout(timeout)
+      if (proxyRes.statusCode && proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
+        try {
+          const redirectUrl = new URL(proxyRes.headers.location, parsed).toString()
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ url: redirectUrl }))
+        } catch {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ url: targetUrl }))
+        }
+        return
+      }
+      if (proxyRes.statusCode !== 200) {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ url: targetUrl }))
+        return
+      }
+
+      const chunks: Buffer[] = []
+      proxyRes.on('data', (c: Buffer) => {
+        chunks.push(c)
+        if (Buffer.concat(chunks).length > 512 * 1024) proxyRes.destroy()
+      })
+      proxyRes.on('end', () => {
+        const html = Buffer.concat(chunks).toString('utf-8').slice(0, 128 * 1024)
+        const getMeta = (prop: string): string => {
+          const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']*)["']`, 'i')
+          const m = html.match(re)
+          if (m) return m[1]
+          const re2 = new RegExp(`content=["']([^"']*)["'][^>]*(?:property|name)=["']${prop}["']`, 'i')
+          const m2 = html.match(re2)
+          return m2 ? m2[1] : ''
+        }
+        const getTag = (tag: string): string => {
+          const re = new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, 'i')
+          const m = html.match(re)
+          return m ? m[1].trim() : ''
+        }
+
+        const title = getMeta('og:title') || getTag('title') || ''
+        const description = getMeta('og:description') || getMeta('description') || ''
+        const image = getMeta('og:image') || ''
+        const siteName = getMeta('og:site_name') || ''
+
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ title, description, image, url: targetUrl, siteName }))
+      })
+      proxyRes.on('error', () => {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ url: targetUrl }))
+      })
+    }).on('error', () => {
+      clearTimeout(timeout)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ url: targetUrl }))
     })
     return
   }

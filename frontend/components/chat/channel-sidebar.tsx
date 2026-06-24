@@ -4,9 +4,10 @@ import { useState, useRef, useEffect, memo } from 'react'
 import type { ChannelInfo } from '@/lib/types'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
 import { HashIcon, CloseIcon, MenuIcon, EditIcon, PinIcon } from '@/components/ui/icons'
-import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar } from '@/lib/avatar'
+import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar, myAvatarUrl } from '@/lib/avatar'
 import { EMOJI_CATEGORIES, EMOJI_CATEGORY_NAMES, emojiUrlFromChar } from '@/lib/emoji'
 import { API_BASE } from '@/lib/room'
+import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds'
 
 interface ChannelSidebarProps {
   channels: ChannelInfo[]
@@ -26,6 +27,7 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [avatarCat, setAvatarCat] = useState(EMOJI_CATEGORY_NAMES[0])
   const [avatarVersion, setAvatarVersion] = useState(0)
+  const [soundOn, setSoundOn] = useState(isSoundEnabled())
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -43,7 +45,7 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
     setMobileOpen(false)
   }
 
-  const currentAvatarUrl = me ? avatarEmojiUrl(me + avatarVersion) : ''
+  const currentAvatarUrl = me ? myAvatarUrl(me + avatarVersion) : ''
 
   const handlePickAvatar = async (emoji: string) => {
     setCustomAvatar(emoji)
@@ -133,6 +135,25 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
             >
               <EditIcon className="w-4 h-4 text-white/50" />
               แก้ไขโปรไฟล์
+            </button>
+            <button
+              onClick={() => { const v = !soundOn; setSoundOn(v); setSoundEnabled(v) }}
+              className="w-full px-3 py-2 text-left text-[13px] text-white/80 hover:bg-white/5 rounded-lg transition flex items-center gap-2"
+            >
+              {soundOn ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white/50">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white/50">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              )}
+              เสียง{soundOn ? 'เปิด' : 'ปิด'}
             </button>
             <button
               onClick={() => { setShowUserMenu(false); onLogout() }}
