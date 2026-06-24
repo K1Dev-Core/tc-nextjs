@@ -6,14 +6,15 @@ import { ChatHeader } from '@/components/chat/chat-header'
 import { ChatMessages } from '@/components/chat/chat-messages'
 import { MessageInput } from '@/components/chat/message-input'
 import { UsernameModal } from '@/components/auth/username-modal'
-import { PinnedPanel } from '@/components/chat/pinned-panel'
-import { ChatSkeleton, FullScreenLoader } from '@/components/ui/skeleton'
+import { PinnedView } from '@/components/chat/pinned-panel'
+import { FullScreenLoader } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
 import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
 
 const STORAGE_KEY = 'aura:username'
+const PINNED_CHANNEL = '__pinned__'
 
 function toGuestLine(m: ChatMessage): LineMessage {
   return {
@@ -36,7 +37,6 @@ export default function Page() {
   const [mounted, setMounted] = useState(false)
   const [username, setUsername] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<LineMessage | null>(null)
-  const [showPinned, setShowPinned] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
 
   const [guestChannels, setGuestChannels] = useState<ChannelInfo[]>([])
@@ -66,7 +66,7 @@ export default function Page() {
   }, [])
 
   const fetchGuestMessages = useCallback((ch: string) => {
-    if (!ch) return
+    if (!ch || ch === PINNED_CHANNEL) return
     fetch(`${API_BASE}/history?channel=${encodeURIComponent(ch)}`)
       .then((r) => r.json())
       .then((d) => {
@@ -113,6 +113,7 @@ export default function Page() {
 
   const displayName = username ?? ''
   const isReady = chat.status === 'open' && chat.activeChannel !== ''
+  const isPinnedView = (isGuest ? guestActive : chat.activeChannel) === PINNED_CHANNEL
   const scrollTrigger = isGuest ? guestActive : chat.activeChannel
   const activeChannelName = isGuest ? (guestActive || 'นกพิราบ') : (chat.activeChannel || 'นกพิราบ')
   const typingUsers = useMemo(() => Object.keys(chat.typing), [chat.typing])
@@ -132,16 +133,20 @@ export default function Page() {
           me={displayName}
           onLogout={changeName}
           onAvatarChange={() => {}}
+          pinnedCount={chat.pinnedMessages.length}
         />
         <div className="flex flex-col flex-1 min-w-0">
           <ChatHeader
-            channelName={activeChannelName}
+            channelName={isPinnedView ? 'ปักหมุด' : activeChannelName}
             onlineCount={chat.users.length}
             status={isGuest ? 'open' : chat.status}
-            onOpenPinned={() => setShowPinned(true)}
-            pinnedCount={chat.pinnedMessages?.length ?? 0}
+            onOpenPinned={() => isGuest ? setGuestActive(PINNED_CHANNEL) : chat.switchChannel(PINNED_CHANNEL)}
+            pinnedCount={chat.pinnedMessages.length}
+            showPinButton={!isPinnedView}
           />
-          {isGuest || !isReady ? (
+          {isPinnedView ? (
+            <PinnedView pins={chat.pinnedMessages ?? []} onUnpin={chat.togglePin} />
+          ) : isGuest || !isReady ? (
             <ChatMessages
               lines={isGuest ? guestLines : []}
               typingUsers={[]}
@@ -178,24 +183,22 @@ export default function Page() {
               />
             </>
           )}
-          {isGuest && (
+          {isGuest && !isPinnedView && (
             <div className="px-4 sm:px-6 py-2 text-[11px] text-white/40 bg-black/20 border-t border-white/8 shrink-0 text-center">
               <button onClick={requireLogin} className="hover:text-white/80 underline underline-offset-2 transition">เข้าสู่ระบบ</button> เพื่อส่งข้อความและรีแอคชั่น
             </div>
           )}
-          <MessageInput
-            onSend={isGuest ? requireLogin : handleSend}
-            onTyping={isGuest ? () => {} : chat.sendTyping}
-            disabled={isGuest || chat.status !== 'open'}
-            placeholder={isGuest ? 'เข้าสู่ระบบเพื่อส่งข้อความ' : `ส่งข้อความใน ${chat.activeChannel || 'นกพิราบ'}`}
-            replyTo={replyTo}
-            onCancelReply={() => setReplyTo(null)}
-          />
+          {!isPinnedView && (
+            <MessageInput
+              onSend={isGuest ? requireLogin : handleSend}
+              onTyping={isGuest ? () => {} : chat.sendTyping}
+              disabled={isGuest || chat.status !== 'open'}
+              placeholder={isGuest ? 'เข้าสู่ระบบเพื่อส่งข้อความ' : `ส่งข้อความใน ${chat.activeChannel || 'นกพิราบ'}`}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+            />
+          )}
         </div>
-
-        {showPinned && (
-          <PinnedPanel pins={chat.pinnedMessages ?? []} onClose={() => setShowPinned(false)} onUnpin={chat.togglePin} />
-        )}
 
         {showLogin && (
           <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center">

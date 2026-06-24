@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import type { ChannelInfo } from '@/lib/types'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
-import { HashIcon, CloseIcon, MenuIcon, EditIcon } from '@/components/ui/icons'
+import { HashIcon, CloseIcon, MenuIcon, EditIcon, PinIcon } from '@/components/ui/icons'
 import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar } from '@/lib/avatar'
 import { EMOJI_CATEGORIES, EMOJI_CATEGORY_NAMES, emojiUrlFromChar } from '@/lib/emoji'
 import { API_BASE } from '@/lib/room'
@@ -17,9 +17,10 @@ interface ChannelSidebarProps {
   me: string | null
   onLogout: () => void
   onAvatarChange: () => void
+  pinnedCount: number
 }
 
-function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout, onAvatarChange }: ChannelSidebarProps) {
+function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout, onAvatarChange, pinnedCount }: ChannelSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
@@ -71,6 +72,21 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
       </div>
 
       <div className="flex-1 overflow-y-auto scroll-slim px-2 space-y-0.5">
+        <button
+          onClick={() => handleSelect('__pinned__')}
+          className={`w-full flex items-center gap-2 rounded-lg transition
+            ${activeChannel === '__pinned__' ? 'bg-white/10' : 'hover:bg-white/5'}
+            px-2.5 py-2 mb-1`}
+          title="ข้อความปักหมุด"
+        >
+          <PinIcon className="w-4 h-4 text-amber-400/70 shrink-0" />
+          <span className={`text-[13px] truncate ${activeChannel === '__pinned__' ? 'text-white/90 font-medium' : 'text-white/55'}`}>
+            ปักหมุด
+          </span>
+          {pinnedCount > 0 && (
+            <span className="ml-auto text-[10px] text-white/30 shrink-0">{pinnedCount}</span>
+          )}
+        </button>
         {channels.map((ch) => {
           const active = ch.name === activeChannel
           return (
