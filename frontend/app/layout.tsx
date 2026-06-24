@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { CodeBackground } from '@/components/ui/code-background'
 
 export const metadata: Metadata = {
   title: 'นกพิราบ — แชทเรียลไทม์',
@@ -10,13 +11,16 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#14161e',
+  themeColor: '#0a0c12',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className="dark">
-      <body className="bg-aurora">{children}</body>
+      <body>
+        <CodeBackground />
+        {children}
+      </body>
     </html>
   )
 }

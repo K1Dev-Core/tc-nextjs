@@ -44,6 +44,19 @@ body {
   }
 }
 
+/* Scrolling code background — moves code text upward, loops seamlessly */
+@keyframes scroll-code {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-aurora,
+  [style*='scroll-code'] {
+    animation: none !important;
+  }
+}
+
 @keyframes shimmer-skeleton {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }

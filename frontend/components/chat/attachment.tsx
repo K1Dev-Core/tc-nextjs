@@ -54,20 +54,39 @@ function Lightbox({ file, onClose }: { file: FileMeta; onClose: () => void }) {
   }, [handleKey])
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 backdrop-blur-md animate-fadein" onClick={onClose}>
-      <button className="absolute top-4 right-4 grid place-items-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition" onClick={onClose} aria-label="ปิด">
+    <div
+      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadein"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 grid place-items-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+        onClick={onClose}
+        aria-label="ปิด"
+      >
         <CloseIcon className="w-5 h-5" />
       </button>
-      <div className="max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
-        <img src={fileUrl(file.url)} alt={file.name} className="max-w-full max-h-[75vh] object-contain rounded-lg" />
-        <div className="flex items-center gap-3 text-white/70 text-sm min-w-0">
-          <span className="truncate">{file.name}</span>
-          <span className="text-white/30">·</span>
-          <span>{formatBytes(file.size)}</span>
-          <a href={fileUrl(file.url)} download={file.name} className="grid place-items-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white transition" aria-label="ดาวน์โหลด">
-            <DownloadIcon className="w-4 h-4" />
-          </a>
-        </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={fileUrl(file.url)}
+        alt={file.name}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-[92vw] max-h-[78vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+      />
+      <div
+        className="mt-3 flex items-center gap-3 text-white/70 text-sm min-w-0 max-w-[92vw]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="truncate">{file.name}</span>
+        <span className="text-white/30">·</span>
+        <span className="shrink-0">{formatBytes(file.size)}</span>
+        <a
+          href={fileUrl(file.url)}
+          download={file.name}
+          className="grid place-items-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white transition shrink-0"
+          aria-label="ดาวน์โหลด"
+        >
+          <DownloadIcon className="w-4 h-4" />
+        </a>
       </div>
     </div>
   )

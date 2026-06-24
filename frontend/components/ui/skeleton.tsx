@@ -1,9 +1,12 @@
 'use client'
 
+import { CodeBackground } from './code-background'
+
 export function FullScreenLoader() {
   return (
-    <div className="h-[100dvh] w-screen grid place-items-center bg-aurora">
-      <div className="flex flex-col items-center gap-4 animate-scalein">
+    <div className="h-[100dvh] w-screen grid place-items-center relative">
+      <CodeBackground />
+      <div className="flex flex-col items-center gap-4 animate-scalein relative">
         <div className="text-5xl font-black tracking-tighter text-white/90 select-none animate-pulse">T</div>
         <div className="skeleton h-2.5 w-24 rounded-full" />
       </div>
