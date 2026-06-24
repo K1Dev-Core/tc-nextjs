@@ -36,35 +36,6 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
 
   return (
     <div className="flex flex-col flex-1 min-w-0 min-h-0">
-      <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-b border-white/8 shrink-0">
-        <div className="relative flex-1">
-          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/35" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาข้อความปักหมุด…"
-            className="w-full glass-soft rounded-lg pl-8 pr-3 py-1.5 text-[12px] outline-none focus:ring-1 focus:ring-white/15"
-          />
-        </div>
-        <div className="flex gap-0.5 shrink-0">
-          {([
-            { id: 'chat' as ViewMode, icon: ListIcon },
-            { id: 'note' as ViewMode, icon: NoteIcon },
-            { id: 'gallery' as ViewMode, icon: GridIcon },
-          ]).map(({ id, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setMode(id)}
-              className={`grid place-items-center w-8 h-8 rounded-lg transition
-                ${mode === id ? 'bg-white/15 text-white/90' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
-              aria-label={id}
-            >
-              <Icon className="w-4 h-4" />
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto scroll-slim p-4">
         {filtered.length === 0 && (
           <div className="h-full grid place-items-center py-12">
@@ -104,6 +75,35 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
             )}
           </div>
         )}
+      </div>
+
+      <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 border-t border-white/8 shrink-0">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/35" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ค้นหาข้อความปักหมุด…"
+            className="w-full glass-soft rounded-lg pl-8 pr-3 py-1.5 text-[12px] outline-none focus:ring-1 focus:ring-white/15"
+          />
+        </div>
+        <div className="flex gap-0.5 shrink-0">
+          {([
+            { id: 'chat' as ViewMode, icon: ListIcon },
+            { id: 'note' as ViewMode, icon: NoteIcon },
+            { id: 'gallery' as ViewMode, icon: GridIcon },
+          ]).map(({ id, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setMode(id)}
+              className={`grid place-items-center w-8 h-8 rounded-lg transition
+                ${mode === id ? 'bg-white/15 text-white/90' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+              aria-label={id}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
