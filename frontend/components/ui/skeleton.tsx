@@ -43,3 +43,60 @@ export function ChatSkeleton() {
     </div>
   )
 }
+
+export function MessageListSkeleton() {
+  const rows = [
+    { mine: false, width: 'w-44 sm:w-56', height: 'h-12' },
+    { mine: true, width: 'w-52 sm:w-64', height: 'h-16' },
+    { mine: false, width: 'w-36 sm:w-48', height: 'h-10' },
+    { mine: false, width: 'w-60 sm:w-72', height: 'h-20' },
+    { mine: true, width: 'w-40 sm:w-52', height: 'h-11' },
+  ]
+
+  return (
+    <div
+      className="flex-1 overflow-hidden px-3 sm:px-5 md:px-8 py-5 space-y-4 animate-fadein"
+      role="status"
+      aria-label="กำลังโหลดข้อความ"
+      aria-busy="true"
+    >
+      {rows.map((row, index) => (
+        <div key={index} className={`flex items-end gap-2.5 ${row.mine ? 'flex-row-reverse' : 'flex-row'}`}>
+          {!row.mine && <div className="skeleton w-8 h-8 rounded-full shrink-0" />}
+          <div className={`min-w-0 flex flex-col gap-1.5 ${row.mine ? 'items-end' : 'items-start'}`}>
+            <div className="skeleton h-2.5 w-20 rounded-full" />
+            <div className={`skeleton ${row.width} ${row.height} max-w-[72vw] rounded-2xl`} />
+          </div>
+        </div>
+      ))}
+      <span className="sr-only">กำลังโหลดข้อความ</span>
+    </div>
+  )
+}
+
+export function ChannelListSkeleton() {
+  return (
+    <div className="space-y-1 px-0.5 py-1" role="status" aria-label="กำลังโหลดห้อง" aria-busy="true">
+      {[72, 88, 64, 80].map((width, index) => (
+        <div key={index} className="flex items-center gap-2 px-2 py-2">
+          <div className="skeleton w-4 h-4 rounded-md shrink-0" />
+          <div className="skeleton h-3 rounded-full" style={{ width }} />
+        </div>
+      ))}
+      <span className="sr-only">กำลังโหลดห้อง</span>
+    </div>
+  )
+}
+
+export function LinkPreviewSkeleton() {
+  return (
+    <div className="mt-1.5 w-72 max-w-full rounded-xl overflow-hidden border border-white/8 bg-white/5 animate-fadein" aria-hidden="true">
+      <div className="skeleton aspect-[1.91/1] w-full" />
+      <div className="p-2.5 space-y-2">
+        <div className="skeleton h-3 w-4/5 rounded-full" />
+        <div className="skeleton h-2.5 w-full rounded-full" />
+        <div className="skeleton h-2.5 w-2/3 rounded-full" />
+      </div>
+    </div>
+  )
+}

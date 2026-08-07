@@ -41,6 +41,8 @@ export function useChat(username: string | null) {
   const [channels, setChannels] = useState<ChannelInfo[]>([])
   const [activeChannel, setActiveChannel] = useState<string>('')
   const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([])
+  const [loadingChannels, setLoadingChannels] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(true)
 
   const wsRef = useRef<WebSocket | null>(null)
   const usernameRef = useRef(username)
@@ -66,7 +68,13 @@ export function useChat(username: string | null) {
   }, [])
 
   useEffect(() => {
-    if (!username) return
+    if (!username) {
+      setLoadingChannels(false)
+      setLoadingMessages(false)
+      return
+    }
+    setLoadingChannels(true)
+    setLoadingMessages(true)
     let stopped = false
     let retry = 0
     let reconnectTimer: ReturnType<typeof setTimeout>
@@ -76,6 +84,7 @@ export function useChat(username: string | null) {
       switch (m.type) {
         case 'channels': {
           if (m.channels) setChannels(m.channels)
+          setLoadingChannels(false)
           if (!channelRef.current && m.channels && m.channels.length > 0) {
             channelRef.current = m.channels[0].name
             setActiveChannel(m.channels[0].name)
@@ -102,6 +111,7 @@ export function useChat(username: string | null) {
             channelRef.current = m.channel
             setActiveChannel(m.channel)
           }
+          setLoadingMessages(false)
           break
         }
         case 'message': {
@@ -167,6 +177,7 @@ export function useChat(username: string | null) {
           if (data.channels) setChannels(data.channels)
         })
         .catch(() => void 0)
+        .finally(() => setLoadingChannels(false))
     }
 
     const connect = () => {
@@ -270,6 +281,7 @@ export function useChat(username: string | null) {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
     if (name === channelRef.current) return
+    setLoadingMessages(true)
     channelRef.current = name
     setActiveChannel(name)
     ws.send(JSON.stringify({ type: 'channel_switch', content: name }))
@@ -310,5 +322,6 @@ export function useChat(username: string | null) {
     send, sendTyping, toggleReaction, togglePin,
     channels, activeChannel, switchChannel, createChannel,
     pinnedMessages,
+    loadingChannels, loadingMessages,
   }
 }

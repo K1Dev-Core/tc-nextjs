@@ -43,6 +43,8 @@ export default function Page() {
   const [guestChannels, setGuestChannels] = useState<ChannelInfo[]>([])
   const [guestLines, setGuestLines] = useState<LineMessage[]>([])
   const [guestActive, setGuestActive] = useState('')
+  const [guestLoadingChannels, setGuestLoadingChannels] = useState(true)
+  const [guestLoadingMessages, setGuestLoadingMessages] = useState(true)
 
   const isGuest = mounted && !username
 
@@ -55,6 +57,7 @@ export default function Page() {
   const chat = useChat(mounted ? username : null)
 
   const fetchGuestChannels = useCallback(() => {
+    setGuestLoadingChannels(true)
     fetch(`${API_BASE}/channels`)
       .then((r) => r.json())
       .then((d) => {
@@ -64,16 +67,22 @@ export default function Page() {
         }
       })
       .catch(() => {})
+      .finally(() => setGuestLoadingChannels(false))
   }, [])
 
   const fetchGuestMessages = useCallback((ch: string) => {
-    if (!ch || ch === PINNED_CHANNEL) return
+    if (!ch || ch === PINNED_CHANNEL) {
+      setGuestLoadingMessages(false)
+      return
+    }
+    setGuestLoadingMessages(true)
     fetch(`${API_BASE}/history?channel=${encodeURIComponent(ch)}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.messages) setGuestLines(d.messages.map(toGuestLine))
       })
       .catch(() => {})
+      .finally(() => setGuestLoadingMessages(false))
   }, [])
 
   useEffect(() => {
@@ -136,6 +145,7 @@ export default function Page() {
           onLogout={changeName}
           onAvatarChange={() => {}}
           pinnedCount={chat.pinnedMessages.length}
+          loading={isGuest ? guestLoadingChannels : chat.loadingChannels}
         />
         <div className="flex flex-col flex-1 min-w-0">
           <ChatHeader
@@ -145,6 +155,7 @@ export default function Page() {
             onOpenPinned={() => isGuest ? setGuestActive(PINNED_CHANNEL) : chat.switchChannel(PINNED_CHANNEL)}
             pinnedCount={chat.pinnedMessages.length}
             showPinButton={!isPinnedView}
+            loading={isGuest ? guestLoadingChannels : chat.loadingChannels}
           />
           {isPinnedView ? (
             <PinnedView pins={chat.pinnedMessages ?? []} onUnpin={chat.togglePin} />
@@ -161,6 +172,7 @@ export default function Page() {
               onPin={() => {}}
               pinnedIds={new Set()}
               scrollTrigger={scrollTrigger}
+              loading={isGuest ? guestLoadingChannels || guestLoadingMessages : true}
             />
           ) : (
             <>
@@ -182,6 +194,7 @@ export default function Page() {
                 onPin={chat.togglePin}
                 pinnedIds={pinnedIds}
                 scrollTrigger={scrollTrigger}
+                loading={chat.loadingMessages}
               />
             </>
           )}

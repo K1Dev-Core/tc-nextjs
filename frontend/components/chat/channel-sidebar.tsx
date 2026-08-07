@@ -8,6 +8,7 @@ import { avatarEmojiUrl, setCustomAvatar, getCustomAvatar, myAvatarUrl } from '@
 import { EMOJI_CATEGORIES, EMOJI_CATEGORY_NAMES, emojiUrlFromChar } from '@/lib/emoji'
 import { API_BASE } from '@/lib/room'
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds'
+import { ChannelListSkeleton } from '@/components/ui/skeleton'
 
 interface ChannelSidebarProps {
   channels: ChannelInfo[]
@@ -19,9 +20,10 @@ interface ChannelSidebarProps {
   onLogout: () => void
   onAvatarChange: () => void
   pinnedCount: number
+  loading?: boolean
 }
 
-function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout, onAvatarChange, pinnedCount }: ChannelSidebarProps) {
+function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlineCount, me, onLogout, onAvatarChange, pinnedCount, loading = false }: ChannelSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
@@ -89,7 +91,7 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
             <span className="ml-auto text-[10px] text-white/30 shrink-0">{pinnedCount}</span>
           )}
         </button>
-        {channels.map((ch) => {
+        {loading ? <ChannelListSkeleton /> : channels.map((ch) => {
           const active = ch.name === activeChannel
           return (
             <button

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { LinkPreviewSkeleton } from '@/components/ui/skeleton'
 
 interface PreviewData {
   title?: string
@@ -40,6 +41,7 @@ export function LinkPreview({ url }: { url: string }) {
     return () => { cancelled = true; clearTimeout(timeout); controller.abort() }
   }, [url, data])
 
+  if (data === undefined) return <LinkPreviewSkeleton />
   if (!data || (!data.title && !data.image)) return null
 
   const domain = (() => {

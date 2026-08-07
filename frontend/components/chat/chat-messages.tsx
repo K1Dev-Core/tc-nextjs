@@ -6,6 +6,7 @@ import { MessageBubble } from './message-bubble'
 import { TypingIndicator } from './typing-indicator'
 import { PigeonMark } from '@/components/ui/pigeon-mark'
 import { SpinnerIcon } from '@/components/ui/icons'
+import { MessageListSkeleton } from '@/components/ui/skeleton'
 
 interface ChatMessagesProps {
   lines: LineMessage[]
@@ -19,9 +20,10 @@ interface ChatMessagesProps {
   onPin: (messageId: number) => void
   pinnedIds: Set<number>
   scrollTrigger: string
+  loading?: boolean
 }
 
-export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, onPin, pinnedIds, scrollTrigger }: ChatMessagesProps) {
+export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, onPin, pinnedIds, scrollTrigger, loading = false }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevHeight = useRef(0)
@@ -94,6 +96,8 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   useEffect(() => {
     scrollToBottom('auto')
   }, [scrollTrigger, scrollToBottom])
+
+  if (loading) return <MessageListSkeleton />
 
   return (
     <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto scroll-slim px-3 sm:px-5 md:px-8 py-5 space-y-2">
