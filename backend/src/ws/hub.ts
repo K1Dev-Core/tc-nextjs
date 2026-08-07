@@ -17,6 +17,15 @@ export function removeClient(c: Client): void {
   clients.delete(c)
 }
 
+export function hasUserInChannel(username: string, channelId: number, exclude?: Client): boolean {
+  for (const c of clients) {
+    if (c === exclude) continue
+    if (c.username !== username || c.channelId !== channelId) continue
+    if (c.ws.readyState === WebSocket.OPEN) return true
+  }
+  return false
+}
+
 export function getOnlineUsernames(channelId?: number): string[] {
   const names = new Set<string>()
   for (const c of clients) {

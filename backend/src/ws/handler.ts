@@ -2,6 +2,7 @@ import { WebSocket } from 'ws'
 import type { ChatMessage, FileMeta } from '../types.js'
 import {
   addClient, removeClient, broadcast, broadcastUsers, broadcastToAll, pingAll,
+  hasUserInChannel,
   type Client
 } from './hub.js'
 import {
@@ -11,28 +12,23 @@ import {
   pinMessage, unpinMessage, getPinnedMessages
 } from '../db/queries.js'
 
-const IDLE_TIMEOUT_MS = 60_000
 const MAX_CONTENT = 4000
 
 export function handleConnection(ws: WebSocket, username: string, channelName: string): void {
   const channel = getChannelByName(channelName) ?? getChannelById(1)!
   const client: Client = { ws, username, alive: true, channelId: channel.id }
+  const alreadyPresent = hasUserInChannel(username, channel.id)
   addClient(client)
   touchUser(username)
 
   sendChannelList(ws)
   sendHistory(ws, channel.id)
-  broadcast({ type: 'join', channel: channel.name, username, timestamp: new Date().toISOString() }, channel.id, client)
+  if (!alreadyPresent) {
+    broadcast({ type: 'join', channel: channel.name, username, timestamp: new Date().toISOString() }, channel.id, client)
+  }
   broadcastUsers(channel.id)
 
-  let idleTimer: NodeJS.Timeout | null = createIdleTimer(ws)
-
   ws.on('message', (raw) => {
-    if (idleTimer) {
-      clearTimeout(idleTimer)
-      idleTimer = createIdleTimer(ws)
-    }
-
     let msg: ChatMessage
     try {
       msg = JSON.parse(raw.toString())
@@ -52,13 +48,19 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
       if (!target) return
 
       const oldChannelId = client.channelId
+      const remainsInOldChannel = hasUserInChannel(username, oldChannelId, client)
+      const alreadyInTargetChannel = hasUserInChannel(username, target.id, client)
       client.channelId = target.id
 
-      broadcast({ type: 'leave', username, timestamp: new Date().toISOString() }, oldChannelId)
+      if (!remainsInOldChannel) {
+        broadcast({ type: 'leave', username, timestamp: new Date().toISOString() }, oldChannelId)
+      }
       broadcastUsers(oldChannelId)
 
       sendHistory(ws, target.id)
-      broadcast({ type: 'join', channel: target.name, username, timestamp: new Date().toISOString() }, target.id, client)
+      if (!alreadyInTargetChannel) {
+        broadcast({ type: 'join', channel: target.name, username, timestamp: new Date().toISOString() }, target.id, client)
+      }
       broadcastUsers(target.id)
       return
     }
@@ -169,10 +171,14 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
   ws.on('close', cleanup)
   ws.on('error', cleanup)
 
+  let cleanedUp = false
   function cleanup() {
-    if (idleTimer) clearTimeout(idleTimer)
+    if (cleanedUp) return
+    cleanedUp = true
     removeClient(client)
-    broadcast({ type: 'leave', username, timestamp: new Date().toISOString() }, client.channelId)
+    if (!hasUserInChannel(username, client.channelId)) {
+      broadcast({ type: 'leave', username, timestamp: new Date().toISOString() }, client.channelId)
+    }
     broadcastUsers(client.channelId)
   }
 }
@@ -199,12 +205,6 @@ function sendChannelList(ws: WebSocket): void {
     timestamp: new Date().toISOString(),
     channels: channels.map((c) => ({ id: c.id, name: c.name, description: c.description })),
   }))
-}
-
-function createIdleTimer(ws: WebSocket): NodeJS.Timeout {
-  return setTimeout(() => {
-    try { ws.close() } catch { void 0 }
-  }, IDLE_TIMEOUT_MS)
 }
 
 export function startHeartbeat(intervalMs = 30_000): NodeJS.Timeout {
