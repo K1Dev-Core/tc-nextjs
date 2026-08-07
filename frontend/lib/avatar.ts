@@ -1,6 +1,11 @@
+import { useEffect, useState } from 'react'
 import { QUICK_EMOJIS, emojiUrl, emojiUrlFromChar, AVATAR_EMOJIS } from './emoji'
+import { API_BASE } from './room'
 
 const AVATAR_STORAGE_KEY = 'aura:avatar'
+const AVATAR_UPDATE_EVENT = 'aura:avatar-update'
+const remoteAvatars = new Map<string, string | null>()
+const avatarRequests = new Map<string, Promise<string | null>>()
 
 const AVATAR_PALETTE = [
   ['#ffd6a5', '#fb8b24'],
@@ -58,6 +63,67 @@ export function avatarEmojiUrl(name: string): string {
   const url = emojiUrlFromChar(emoji)
   if (url) return url
   return emojiUrl(QUICK_EMOJIS[hash(name) % QUICK_EMOJIS.length])
+}
+
+function avatarUrlFromValue(name: string, avatar: string | null | undefined): string {
+  if (avatar) {
+    const url = emojiUrlFromChar(avatar)
+    if (url) return url
+  }
+  return avatarEmojiUrl(name)
+}
+
+export function updateAvatarCache(name: string, avatar: string | null): void {
+  remoteAvatars.set(name, avatar)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(AVATAR_UPDATE_EVENT, { detail: { name, avatar } }))
+  }
+}
+
+async function fetchAvatar(name: string): Promise<string | null> {
+  if (remoteAvatars.has(name)) return remoteAvatars.get(name) ?? null
+  const existing = avatarRequests.get(name)
+  if (existing) return existing
+
+  const request = fetch(`${API_BASE}/avatar?username=${encodeURIComponent(name)}`)
+    .then(async (res) => {
+      if (!res.ok) return null
+      const data = await res.json() as { avatar?: string | null }
+      return data.avatar ?? null
+    })
+    .catch(() => null)
+    .then((avatar) => {
+      remoteAvatars.set(name, avatar)
+      return avatar
+    })
+    .finally(() => avatarRequests.delete(name))
+
+  avatarRequests.set(name, request)
+  return request
+}
+
+export function useAvatarUrl(name: string): string {
+  const [url, setUrl] = useState(() => avatarUrlFromValue(name, remoteAvatars.get(name)))
+
+  useEffect(() => {
+    let active = true
+    setUrl(avatarUrlFromValue(name, remoteAvatars.get(name)))
+    fetchAvatar(name).then((avatar) => {
+      if (active) setUrl(avatarUrlFromValue(name, avatar))
+    })
+
+    const handleUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<{ name: string; avatar: string | null }>).detail
+      if (detail?.name === name) setUrl(avatarUrlFromValue(name, detail.avatar))
+    }
+    window.addEventListener(AVATAR_UPDATE_EVENT, handleUpdate)
+    return () => {
+      active = false
+      window.removeEventListener(AVATAR_UPDATE_EVENT, handleUpdate)
+    }
+  }, [name])
+
+  return url
 }
 
 export function myAvatarUrl(name: string): string {

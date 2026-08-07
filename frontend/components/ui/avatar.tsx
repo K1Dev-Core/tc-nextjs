@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { avatarEmojiUrl } from '@/lib/avatar'
+import { useAvatarUrl } from '@/lib/avatar'
 
 interface AvatarProps {
   name: string
@@ -10,7 +10,7 @@ interface AvatarProps {
 }
 
 function AvatarBase({ name, size = 40, className = '' }: AvatarProps) {
-  const url = avatarEmojiUrl(name)
+  const url = useAvatarUrl(name)
   const pad = Math.max(2, Math.floor(size * 0.1))
   return (
     <div

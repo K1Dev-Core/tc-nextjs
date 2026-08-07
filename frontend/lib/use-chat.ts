@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, FileMeta, LineMessage, ChannelInfo, ReactionInfo } from './types'
 import { WS_URL, API_BASE } from './room'
 import { sfx } from './sounds'
+import { updateAvatarCache } from './avatar'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
@@ -150,6 +151,10 @@ export function useChat(username: string | null) {
         case 'typing': {
           if (m.username === me) return
           setTyping((prev) => ({ ...prev, [m.username]: Date.now() }))
+          break
+        }
+        case 'avatar_update': {
+          updateAvatarCache(m.username, m.avatar ?? null)
           break
         }
       }

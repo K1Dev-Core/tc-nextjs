@@ -4,7 +4,7 @@ import { URL } from 'node:url'
 import { WebSocketServer } from 'ws'
 import { getDb, closeDb } from './db/connection.js'
 import { handleConnection, startHeartbeat } from './ws/handler.js'
-import { getOnlineUsernames } from './ws/hub.js'
+import { getOnlineUsernames, broadcastToAll } from './ws/hub.js'
 import { handleUpload, serveFile } from './db/upload.js'
 import { getRecentHistory, getHistoryBefore, getChannels, getChannelByName, getPinnedMessages, getChannelById, getUserAvatar, setUserAvatar, adminGetAllUsers, adminDeleteUser, adminGetMessageCountForUser, adminCreateChannel, adminUpdateChannel, adminDeleteChannel, adminSearchMessages, adminDeleteMessage } from './db/queries.js'
 
@@ -96,6 +96,12 @@ const server = http.createServer((req, res) => {
         const { username, avatar } = JSON.parse(body)
         if (!username) { res.writeHead(400); res.end('missing username'); return }
         setUserAvatar(username, avatar ?? null)
+        broadcastToAll({
+          type: 'avatar_update',
+          username,
+          avatar: avatar ?? null,
+          timestamp: new Date().toISOString(),
+        })
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true }))
       } catch { res.writeHead(400); res.end('invalid json') }

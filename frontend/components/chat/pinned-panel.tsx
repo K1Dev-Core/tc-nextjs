@@ -4,7 +4,7 @@ import { useState, useMemo, memo } from 'react'
 import type { ChatMessage, FileMeta } from '@/lib/types'
 import { CloseIcon, PinIcon, GridIcon, ListIcon, NoteIcon, SearchIcon } from '@/components/ui/icons'
 import { fileUrl, isImage, isVideo, formatBytes } from '@/lib/file-utils'
-import { avatarEmojiUrl, formatTime } from '@/lib/avatar'
+import { useAvatarUrl, formatTime } from '@/lib/avatar'
 import { emojiUrlFromChar } from '@/lib/emoji'
 import { Attachment, Lightbox } from './attachment'
 import { LinkPreview } from './link-preview'
@@ -111,6 +111,7 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
 
 function PinnedNote({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) => void }) {
   const linkUrl = pin.content ? extractUrl(pin.content) : ''
+  const avatarUrl = useAvatarUrl(pin.username)
   return (
     <div className="glass-soft rounded-xl p-3 group relative">
       <button
@@ -121,7 +122,7 @@ function PinnedNote({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) 
         <CloseIcon className="w-3.5 h-3.5" />
       </button>
       <div className="flex items-center gap-2 mb-1.5">
-        <img src={avatarEmojiUrl(pin.username)} alt={pin.username} width={18} height={18} className="rounded-full" />
+        <img src={avatarUrl} alt={pin.username} width={18} height={18} className="rounded-full" />
         <span className="text-[11px] text-white/50">{pin.username}</span>
         <span className="text-[10px] text-white/25">{formatTime(pin.timestamp)}</span>
       </div>
@@ -134,9 +135,10 @@ function PinnedNote({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) 
 
 function PinnedChatItem({ pin, onUnpin }: { pin: ChatMessage; onUnpin: (id: number) => void }) {
   const linkUrl = pin.content ? extractUrl(pin.content) : ''
+  const avatarUrl = useAvatarUrl(pin.username)
   return (
     <div className="flex items-start gap-2.5 group">
-      <img src={avatarEmojiUrl(pin.username)} alt={pin.username} width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
+      <img src={avatarUrl} alt={pin.username} width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-[12px] font-medium text-white/80">{pin.username}</span>

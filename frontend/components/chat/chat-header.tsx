@@ -14,7 +14,7 @@ interface ChatHeaderProps {
 
 function ChatHeaderBase({ channelName, onlineCount, status, onOpenPinned, pinnedCount, showPinButton = true }: ChatHeaderProps) {
   return (
-    <header className="flex items-center gap-3 px-4 sm:px-6 py-3.5 border-b border-white/8 bg-black/10 shrink-0 lg:pl-6 pl-16 lg:pl-6">
+    <header className="flex items-center gap-3 px-4 pl-16 sm:px-6 sm:pl-16 lg:pl-6 py-3.5 border-b border-white/8 bg-black/10 shrink-0">
       <div className="min-w-0 flex-1">
         <div className="text-[15px] font-semibold tracking-tight truncate">{channelName || 'นกพิราบ'}</div>
         <div className="text-[11px] text-white/40 flex items-center gap-1.5">

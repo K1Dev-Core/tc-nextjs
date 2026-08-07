@@ -3,6 +3,7 @@ export type MessageType =
   | 'channels' | 'channel_switch' | 'channel_created'
   | 'reply' | 'react' | 'unreact' | 'reaction_update'
   | 'pin' | 'unpin' | 'pins_update'
+  | 'avatar_update'
 
 export interface FileMeta {
   url: string
@@ -39,6 +40,7 @@ export interface ChatMessage {
   emoji?: string
   reactions?: ReactionInfo[]
   pins?: ChatMessage[]
+  avatar?: string | null
 }
 
 export interface LineMessage {
