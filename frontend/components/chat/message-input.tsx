@@ -6,6 +6,7 @@ import { useUpload } from '@/lib/use-upload'
 import { formatBytes, isImage } from '@/lib/file-utils'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { EmojiPickerModal } from './emoji-picker-modal'
+import { codeFence, detectPastedCode } from '@/lib/code-paste'
 
 interface MessageInputProps {
   onSend: (content: string, file?: FileMeta, replyTo?: number) => void
@@ -64,7 +65,29 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
     if (files.length > 0 && !disabled && !loading) {
       e.preventDefault()
       handleFile(files[0])
+      return
     }
+
+    if (disabled) return
+    const pastedText = e.clipboardData.getData('text/plain')
+    const detected = detectPastedCode(pastedText)
+    if (!detected) return
+
+    e.preventDefault()
+    const el = taRef.current
+    const start = el?.selectionStart ?? value.length
+    const end = el?.selectionEnd ?? value.length
+    const fenced = codeFence(detected)
+    const nextValue = value.slice(0, start) + fenced + value.slice(end)
+    setValue(nextValue)
+    onTyping()
+
+    requestAnimationFrame(() => {
+      const cursor = start + fenced.length
+      el?.focus()
+      el?.setSelectionRange(cursor, cursor)
+      resize()
+    })
   }
 
   const insertEmoji = (emoji: string) => {
