@@ -233,14 +233,19 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
   const mine = line.mine
   const showMeta = !grouped
   const hasReactions = line.reactions && line.reactions.length > 0
+  const hasCodeBlock = Boolean(line.content?.includes('```'))
   const linkUrl = useMemo(() => line.content ? extractUrl(line.content) : '', [line.content])
 
   return (
-    <div className={`group flex items-end gap-2.5 animate-slidein ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
-      <div className="w-8 shrink-0">
-        {showMeta && !mine && <MiniAvatar name={line.username} />}
-      </div>
-      <div className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+    <div className={`group flex items-end gap-2.5 animate-slidein w-full min-w-0 ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
+      {!mine && (
+        <div className="w-8 shrink-0">
+          {showMeta && <MiniAvatar name={line.username} />}
+        </div>
+      )}
+      <div className={`${hasCodeBlock
+        ? `w-full min-w-0 ${mine ? 'max-w-full' : 'max-w-[calc(100%_-_2.625rem)]'} sm:max-w-[85%] md:max-w-[75%]`
+        : 'max-w-[85%] sm:max-w-[75%] md:max-w-[65%]'} flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
         {showMeta && (
           <div className={`text-[11px] mb-1 px-1 ${mine ? 'text-white/40' : 'text-white/55'}`}>
             {mine ? 'คุณ' : line.username} · {formatTime(line.timestamp)}
@@ -255,9 +260,9 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
         )}
 
         {(line.content || line.file) && (
-          <div className="flex items-end gap-1.5">
+          <div className={`flex items-end gap-1.5 min-w-0 max-w-full ${hasCodeBlock ? 'w-full' : ''}`}>
             {line.content && (
-              <div className={`px-3.5 py-2.5 text-[14px] leading-relaxed rounded-2xl whitespace-pre-wrap break-words
+              <div className={`${hasCodeBlock ? 'w-full min-w-0 p-1 sm:p-1.5' : 'px-3.5 py-2.5'} max-w-full text-[14px] leading-relaxed rounded-2xl whitespace-pre-wrap break-words
                 ${mine ? 'bubble-me rounded-br-md text-white' : 'bubble-them rounded-bl-md text-white/90'}
                 ${line.file ? 'mb-0' : ''}`}>
                 {renderContentCached(line.content)}

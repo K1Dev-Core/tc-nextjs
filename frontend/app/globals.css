@@ -153,15 +153,42 @@ textarea::placeholder {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .code-block pre {
   margin: 0;
   padding: 12px 14px;
   overflow-x: auto;
+  max-width: 100%;
+  white-space: pre;
+  word-break: normal;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
   font-family: 'SF Mono', 'Fira Code', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.code-block pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.code-block pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-block pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.code-block pre::-webkit-scrollbar-button {
+  display: none;
 }
 
 .code-block pre code {
@@ -187,4 +214,23 @@ textarea::placeholder {
   border-radius: 4px;
   font-family: 'SF Mono', ui-monospace, monospace;
   font-size: 0.85em;
+}
+
+@media (max-width: 639px) {
+  .code-block {
+    border-radius: 9px;
+    margin-block: 0;
+  }
+
+  .code-block-header {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
+  .code-block pre {
+    padding: 10px 11px 12px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
 }
