@@ -9,15 +9,17 @@ import { emojiUrlFromChar } from '@/lib/emoji'
 import { Attachment, Lightbox } from './attachment'
 import { LinkPreview } from './link-preview'
 import { extractUrl } from './message-bubble'
+import { PinnedViewSkeleton } from '@/components/ui/skeleton'
 
 type ViewMode = 'note' | 'chat' | 'gallery'
 
 interface PinnedViewProps {
   pins: ChatMessage[]
   onUnpin: (messageId: number) => void
+  loading?: boolean
 }
 
-function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
+function PinnedViewBase({ pins, onUnpin, loading = false }: PinnedViewProps) {
   const [mode, setMode] = useState<ViewMode>('chat')
   const [query, setQuery] = useState('')
 
@@ -33,6 +35,8 @@ function PinnedViewBase({ pins, onUnpin }: PinnedViewProps) {
   }, [pins, query])
 
   const images = useMemo(() => filtered.filter((p) => p.file && isImage(p.file)), [filtered])
+
+  if (loading) return <PinnedViewSkeleton />
 
   return (
     <div className="flex flex-col flex-1 min-w-0 min-h-0">

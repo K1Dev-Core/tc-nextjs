@@ -39,12 +39,15 @@ export default function Page() {
   const [username, setUsername] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<LineMessage | null>(null)
   const [showLogin, setShowLogin] = useState(false)
+  const [pinnedOpen, setPinnedOpen] = useState(false)
 
   const [guestChannels, setGuestChannels] = useState<ChannelInfo[]>([])
   const [guestLines, setGuestLines] = useState<LineMessage[]>([])
   const [guestActive, setGuestActive] = useState('')
   const [guestLoadingChannels, setGuestLoadingChannels] = useState(true)
   const [guestLoadingMessages, setGuestLoadingMessages] = useState(true)
+  const [guestPins, setGuestPins] = useState<ChatMessage[]>([])
+  const [guestLoadingPins, setGuestLoadingPins] = useState(false)
 
   const isGuest = mounted && !username
 
@@ -71,7 +74,7 @@ export default function Page() {
   }, [])
 
   const fetchGuestMessages = useCallback((ch: string) => {
-    if (!ch || ch === PINNED_CHANNEL) {
+    if (!ch) {
       setGuestLoadingMessages(false)
       return
     }
@@ -85,6 +88,17 @@ export default function Page() {
       .finally(() => setGuestLoadingMessages(false))
   }, [])
 
+  const fetchGuestPins = useCallback((ch: string) => {
+    if (!ch) return
+    setGuestLoadingPins(true)
+    setGuestPins([])
+    fetch(`${API_BASE}/pins/${encodeURIComponent(ch)}`)
+      .then((r) => r.json())
+      .then((d) => setGuestPins(d.pins ?? []))
+      .catch(() => {})
+      .finally(() => setGuestLoadingPins(false))
+  }, [])
+
   useEffect(() => {
     if (!isGuest) return
     fetchGuestChannels()
@@ -94,6 +108,15 @@ export default function Page() {
     if (!isGuest || !guestActive) return
     fetchGuestMessages(guestActive)
   }, [isGuest, guestActive, fetchGuestMessages])
+
+  useEffect(() => {
+    if (!pinnedOpen) return
+    if (isGuest) {
+      if (guestActive) fetchGuestPins(guestActive)
+    } else if (chat.activeChannel) {
+      chat.loadPinnedMessages()
+    }
+  }, [pinnedOpen, isGuest, guestActive, chat.activeChannel, chat.loadPinnedMessages, fetchGuestPins])
 
   const join = async (name: string) => {
     localStorage.setItem(STORAGE_KEY, name)
@@ -112,6 +135,7 @@ export default function Page() {
     setGuestLines(chat.lines)
     setGuestChannels(chat.channels)
     setGuestActive(chat.activeChannel || guestActive)
+    setPinnedOpen(false)
     setUsername(null)
   }
 
@@ -122,13 +146,24 @@ export default function Page() {
 
   const requireLogin = useCallback(() => setShowLogin(true), [])
 
+  const selectChannel = useCallback((name: string) => {
+    if (name === PINNED_CHANNEL) {
+      setPinnedOpen(true)
+      return
+    }
+    setPinnedOpen(false)
+    if (isGuest) setGuestActive(name)
+    else chat.switchChannel(name)
+  }, [isGuest, chat.switchChannel])
+
   const displayName = username ?? ''
   const isReady = chat.status === 'open' && chat.activeChannel !== ''
-  const isPinnedView = (isGuest ? guestActive : chat.activeChannel) === PINNED_CHANNEL
+  const isPinnedView = pinnedOpen
   const scrollTrigger = isGuest ? guestActive : chat.activeChannel
   const activeChannelName = isGuest ? (guestActive || 'นกพิราบ') : (chat.activeChannel || 'นกพิราบ')
   const typingUsers = useMemo(() => Object.keys(chat.typing), [chat.typing])
-  const pinnedIds = useMemo(() => new Set((chat.pinnedMessages ?? []).map((p) => p.id).filter(Boolean) as number[]), [chat.pinnedMessages])
+  const displayedPins = isGuest ? guestPins : chat.pinnedMessages
+  const pinnedIds = useMemo(() => new Set((displayedPins ?? []).map((p) => p.id).filter(Boolean) as number[]), [displayedPins])
 
   if (!mounted) return <FullScreenLoader />
 
@@ -137,14 +172,14 @@ export default function Page() {
       <div className="relative flex h-full w-full max-w-7xl glass overflow-hidden">
         <ChannelSidebar
           channels={isGuest ? guestChannels : chat.channels}
-          activeChannel={isGuest ? guestActive : chat.activeChannel}
-          onSelect={isGuest ? setGuestActive : chat.switchChannel}
+          activeChannel={isPinnedView ? PINNED_CHANNEL : (isGuest ? guestActive : chat.activeChannel)}
+          onSelect={selectChannel}
           onCreate={isGuest ? requireLogin : chat.createChannel}
           onlineCount={chat.users.length}
           me={displayName}
           onLogout={changeName}
           onAvatarChange={() => {}}
-          pinnedCount={chat.pinnedMessages.length}
+          pinnedCount={displayedPins.length}
           loading={isGuest ? guestLoadingChannels : chat.loadingChannels}
         />
         <div className="flex flex-col flex-1 min-w-0">
@@ -152,13 +187,17 @@ export default function Page() {
             channelName={isPinnedView ? 'ปักหมุด' : activeChannelName}
             onlineCount={chat.users.length}
             status={isGuest ? 'open' : chat.status}
-            onOpenPinned={() => isGuest ? setGuestActive(PINNED_CHANNEL) : chat.switchChannel(PINNED_CHANNEL)}
-            pinnedCount={chat.pinnedMessages.length}
+            onOpenPinned={() => setPinnedOpen(true)}
+            pinnedCount={displayedPins.length}
             showPinButton={!isPinnedView}
             loading={isGuest ? guestLoadingChannels : chat.loadingChannels}
           />
           {isPinnedView ? (
-            <PinnedView pins={chat.pinnedMessages ?? []} onUnpin={chat.togglePin} />
+            <PinnedView
+              pins={displayedPins ?? []}
+              onUnpin={isGuest ? requireLogin : chat.togglePin}
+              loading={isGuest ? guestLoadingPins : chat.loadingPins}
+            />
           ) : isGuest || !isReady ? (
             <ChatMessages
               lines={isGuest ? guestLines : []}

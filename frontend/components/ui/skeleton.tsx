@@ -100,3 +100,28 @@ export function LinkPreviewSkeleton() {
     </div>
   )
 }
+
+export function PinnedViewSkeleton() {
+  return (
+    <div className="flex flex-col flex-1 min-w-0 min-h-0" role="status" aria-label="กำลังโหลดข้อความปักหมุด" aria-busy="true">
+      <div className="flex-1 overflow-hidden p-4 space-y-4 animate-fadein">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="flex items-start gap-2.5">
+            <div className="skeleton w-7 h-7 rounded-full shrink-0" />
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex gap-2">
+                <div className="skeleton h-2.5 w-20 rounded-full" />
+                <div className="skeleton h-2.5 w-12 rounded-full" />
+              </div>
+              <div className={`skeleton rounded-xl ${index % 2 === 0 ? 'h-14 w-4/5' : 'h-10 w-3/5'}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 sm:px-6 py-2.5 border-t border-white/8">
+        <div className="skeleton h-8 w-full rounded-lg" />
+      </div>
+      <span className="sr-only">กำลังโหลดข้อความปักหมุด</span>
+    </div>
+  )
+}

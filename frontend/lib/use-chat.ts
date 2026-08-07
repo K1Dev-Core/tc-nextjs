@@ -43,6 +43,7 @@ export function useChat(username: string | null) {
   const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([])
   const [loadingChannels, setLoadingChannels] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(true)
+  const [loadingPins, setLoadingPins] = useState(true)
 
   const wsRef = useRef<WebSocket | null>(null)
   const usernameRef = useRef(username)
@@ -71,10 +72,12 @@ export function useChat(username: string | null) {
     if (!username) {
       setLoadingChannels(false)
       setLoadingMessages(false)
+      setLoadingPins(false)
       return
     }
     setLoadingChannels(true)
     setLoadingMessages(true)
+    setLoadingPins(true)
     let stopped = false
     let retry = 0
     let reconnectTimer: ReturnType<typeof setTimeout>
@@ -101,6 +104,7 @@ export function useChat(username: string | null) {
           setLines(mapped)
           setTyping({})
           if (m.pins) setPinnedMessages(m.pins)
+          setLoadingPins(false)
           if (mapped.length > 0) {
             oldestDbId.current = mapped[0].dbId ?? null
             setHasMore(mapped.length >= 50)
@@ -135,6 +139,7 @@ export function useChat(username: string | null) {
         }
         case 'pins_update': {
           if (m.pins) setPinnedMessages(m.pins)
+          setLoadingPins(false)
           break
         }
         case 'join': {
@@ -277,11 +282,29 @@ export function useChat(username: string | null) {
     }
   }, [pinnedMessages])
 
+  const loadPinnedMessages = useCallback(async () => {
+    const channel = channelRef.current
+    if (!channel) return
+    setLoadingPins(true)
+    try {
+      const res = await fetch(`${API_BASE}/pins/${encodeURIComponent(channel)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setPinnedMessages((data.pins ?? []) as ChatMessage[])
+    } catch {
+      void 0
+    } finally {
+      setLoadingPins(false)
+    }
+  }, [])
+
   const switchChannel = useCallback((name: string) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
     if (name === channelRef.current) return
     setLoadingMessages(true)
+    setLoadingPins(true)
+    setPinnedMessages([])
     channelRef.current = name
     setActiveChannel(name)
     ws.send(JSON.stringify({ type: 'channel_switch', content: name }))
@@ -321,7 +344,7 @@ export function useChat(username: string | null) {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
     send, sendTyping, toggleReaction, togglePin,
     channels, activeChannel, switchChannel, createChannel,
-    pinnedMessages,
-    loadingChannels, loadingMessages,
+    pinnedMessages, loadPinnedMessages,
+    loadingChannels, loadingMessages, loadingPins,
   }
 }
