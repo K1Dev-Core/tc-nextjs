@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useState } from 'react'
 import type { ChannelInfo } from '@/lib/types'
-import type { ThemeName } from '@/lib/theme'
+import { THEMES, type ThemeName } from '@/lib/theme'
 
 interface CommandPaletteProps {
   open: boolean
@@ -17,7 +17,6 @@ interface CommandPaletteProps {
   onSetTheme: (theme: ThemeName) => void
 }
 
-const THEMES: ThemeName[] = ['aurora', 'matrix', 'minimal', 'cyber']
 
 function CommandPaletteBase({ open, channels, activeChannel, theme, onClose, onSelectChannel, onOpenPinned, onOpenUpload, onFocusInput, onSetTheme }: CommandPaletteProps) {
   const [query, setQuery] = useState('')

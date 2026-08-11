@@ -67,6 +67,88 @@ body[data-theme='cyber'] {
     linear-gradient(135deg, #09090f 0%, #17132c 55%, #020617 100%);
 }
 
+
+body[data-theme='plain'] {
+  background: #c0c0c0 !important;
+  color: #111 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  animation: none !important;
+}
+
+body[data-theme='plain'] .code-background {
+  display: none !important;
+}
+
+body[data-theme='plain'] *,
+body[data-theme='plain'] *::before,
+body[data-theme='plain'] *::after {
+  animation: none !important;
+  transition: none !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #111 !important;
+  border-color: #808080 !important;
+}
+
+body[data-theme='plain'] a {
+  color: #0000ee !important;
+  text-decoration: underline !important;
+}
+
+body[data-theme='plain'] .glass,
+body[data-theme='plain'] .glass-soft {
+  background: #d4d0c8 !important;
+  border: 2px solid #808080 !important;
+  border-top-color: #ffffff !important;
+  border-left-color: #ffffff !important;
+  border-radius: 0 !important;
+}
+
+body[data-theme='plain'] .bubble-me,
+body[data-theme='plain'] .bubble-them,
+body[data-theme='plain'] .bubble-system,
+body[data-theme='plain'] .code-block,
+body[data-theme='plain'] .inline-code {
+  background: #ffffff !important;
+  border: 1px solid #808080 !important;
+  border-radius: 0 !important;
+}
+
+body[data-theme='plain'] input,
+body[data-theme='plain'] textarea,
+body[data-theme='plain'] button {
+  background: #ffffff !important;
+  border-radius: 0 !important;
+}
+
+body[data-theme='plain'] button {
+  border: 1px solid #808080 !important;
+  border-top-color: #ffffff !important;
+  border-left-color: #ffffff !important;
+}
+
+body[data-theme='plain'] .skeleton {
+  background: #bdbdbd !important;
+}
+
+body[data-theme='plain'] .rounded-xl,
+body[data-theme='plain'] .rounded-2xl,
+body[data-theme='plain'] .rounded-lg,
+body[data-theme='plain'] .rounded-full,
+body[data-theme='plain'] .rounded-md,
+body[data-theme='plain'] .rounded-br-md,
+body[data-theme='plain'] .rounded-bl-md {
+  border-radius: 0 !important;
+}
+
+body[data-theme='plain'] img,
+body[data-theme='plain'] video,
+body[data-theme='plain'] audio {
+  filter: none !important;
+}
+
 body[data-theme='matrix'] .bubble-me { background: linear-gradient(135deg, #14532d 0%, #052e16 100%); }
 body[data-theme='matrix'] .bubble-them { background: linear-gradient(135deg, #1f3b2f 0%, #10251b 100%); }
 body[data-theme='minimal'] .bubble-me { background: rgba(255, 255, 255, 0.12); }

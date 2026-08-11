@@ -88,7 +88,7 @@ const COLUMNS = [
 
 export function CodeBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+    <div className="code-background pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(168,85,247,0.12),transparent_28%),radial-gradient(circle_at_50%_80%,rgba(34,197,94,0.08),transparent_34%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(60deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:46px_46px] animate-code-grid" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,12,20,0.92)_0%,rgba(10,12,20,0.40)_28%,rgba(10,12,20,0.28)_50%,rgba(10,12,20,0.40)_72%,rgba(10,12,20,0.92)_100%)]" />
