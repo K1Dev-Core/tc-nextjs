@@ -232,21 +232,8 @@ export function useChat(username: string | null) {
           setLoadingPins(false)
           break
         }
-        case 'join': {
-          if (m.username === me) return
-          setLines((prev) => [
-            ...prev,
-            { id: nextId(), type: 'system', username: m.username, content: 'เข้าร่วม', timestamp: m.timestamp, mine: false },
-          ])
-          sfx.join()
-          break
-        }
+        case 'join':
         case 'leave': {
-          setLines((prev) => [
-            ...prev,
-            { id: nextId(), type: 'system', username: m.username, content: 'ออกจากห้อง', timestamp: m.timestamp, mine: false },
-          ])
-          sfx.leave()
           break
         }
         case 'users': {
