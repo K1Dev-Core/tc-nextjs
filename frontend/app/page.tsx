@@ -1,19 +1,32 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { ChannelSidebar } from '@/components/chat/channel-sidebar'
 import { ChatHeader } from '@/components/chat/chat-header'
 import { ChatMessages } from '@/components/chat/chat-messages'
 import { MessageInput } from '@/components/chat/message-input'
-import { UsernameModal } from '@/components/auth/username-modal'
-import { PinnedView } from '@/components/chat/pinned-panel'
-import { FullScreenLoader } from '@/components/ui/skeleton'
+import { FullScreenLoader, PinnedViewSkeleton } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
 import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
 import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
+
+
+const UsernameModal = dynamic(
+  () => import('@/components/auth/username-modal').then((mod) => mod.UsernameModal),
+  { ssr: false },
+)
+
+const PinnedView = dynamic(
+  () => import('@/components/chat/pinned-panel').then((mod) => mod.PinnedView),
+  { ssr: false, loading: () => <PinnedViewSkeleton /> },
+)
+
+const EMPTY_PINNED_IDS = new Set<number>()
+const NOOP = () => {}
 
 const STORAGE_KEY = 'aura:username'
 const PINNED_CHANNEL = '__pinned__'
@@ -164,7 +177,10 @@ export default function Page() {
   const activeChannelName = isGuest ? (guestActive || 'นกพิราบ') : (chat.activeChannel || 'นกพิราบ')
   const typingUsers = useMemo(() => Object.keys(chat.typing), [chat.typing])
   const displayedPins = isGuest ? guestPins : chat.pinnedMessages
-  const pinnedIds = useMemo(() => new Set((displayedPins ?? []).map((p) => p.id).filter(Boolean) as number[]), [displayedPins])
+  const pinnedIds = useMemo(() => {
+    const ids = (displayedPins ?? []).map((p) => p.id).filter(Boolean) as number[]
+    return ids.length ? new Set(ids) : EMPTY_PINNED_IDS
+  }, [displayedPins])
 
   if (!mounted) return <FullScreenLoader />
 
@@ -206,11 +222,11 @@ export default function Page() {
               me={displayName}
               hasMore={false}
               loadingMore={false}
-              onLoadMore={() => {}}
+              onLoadMore={NOOP}
               onReply={requireLogin}
               onReact={requireLogin}
-              onPin={() => {}}
-              pinnedIds={new Set()}
+              onPin={NOOP}
+              pinnedIds={EMPTY_PINNED_IDS}
               scrollTrigger={scrollTrigger}
               loading={isGuest ? guestLoadingChannels || guestLoadingMessages : true}
             />
@@ -246,7 +262,7 @@ export default function Page() {
           {!isPinnedView && (
             <MessageInput
               onSend={isGuest ? requireLogin : handleSend}
-              onTyping={isGuest ? () => {} : chat.sendTyping}
+              onTyping={isGuest ? NOOP : chat.sendTyping}
               disabled={isGuest || chat.status !== 'open'}
               placeholder={isGuest ? 'เข้าสู่ระบบเพื่อส่งข้อความ' : `ส่งข้อความใน ${chat.activeChannel || 'นกพิราบ'}`}
               replyTo={replyTo}
