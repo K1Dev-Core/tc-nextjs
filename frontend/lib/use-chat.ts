@@ -5,6 +5,7 @@ import type { ChatMessage, FileMeta, LineMessage, ChannelInfo, ReactionInfo } fr
 import { WS_URL, API_BASE } from './room'
 import { sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
+import { normalizeFileMeta } from './file-utils'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
@@ -19,7 +20,7 @@ function toLine(m: ChatMessage, me: string): LineMessage {
     type: 'message',
     username: m.username,
     content: m.content ?? '',
-    file: m.file,
+    file: normalizeFileMeta(m.file),
     timestamp: m.timestamp,
     mine: m.username === me,
     replyTo: m.replyTo,
@@ -103,7 +104,7 @@ export function useChat(username: string | null) {
           const mapped = m.history.map((h) => toLine(h, me))
           setLines(mapped)
           setTyping({})
-          if (m.pins) setPinnedMessages(m.pins)
+          if (m.pins) setPinnedMessages(m.pins.map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
           setLoadingPins(false)
           if (mapped.length > 0) {
             oldestDbId.current = mapped[0].dbId ?? null
@@ -138,7 +139,7 @@ export function useChat(username: string | null) {
           break
         }
         case 'pins_update': {
-          if (m.pins) setPinnedMessages(m.pins)
+          if (m.pins) setPinnedMessages(m.pins.map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
           setLoadingPins(false)
           break
         }
@@ -290,7 +291,7 @@ export function useChat(username: string | null) {
       const res = await fetch(`${API_BASE}/pins/${encodeURIComponent(channel)}`)
       if (!res.ok) return
       const data = await res.json()
-      setPinnedMessages((data.pins ?? []) as ChatMessage[])
+      setPinnedMessages(((data.pins ?? []) as ChatMessage[]).map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
     } catch {
       void 0
     } finally {

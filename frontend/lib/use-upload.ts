@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import type { FileMeta } from './types'
 import { API_BASE } from './room'
+import { normalizeFileMeta } from './file-utils'
 
 interface UploadState {
   loading: boolean
@@ -29,7 +30,23 @@ export function useUpload() {
 
       xhr.onload = () => {
         try {
-          const meta = JSON.parse(xhr.responseText) as FileMeta
+          const data = JSON.parse(xhr.responseText) as { error?: string } | unknown
+          if (xhr.status < 200 || xhr.status >= 300) {
+            const message = typeof data === 'object' && data && 'error' in data && typeof data.error === 'string'
+              ? data.error
+              : 'อัปโหลดล้มเหลว'
+            setState({ loading: false, progress: 0, error: message })
+            resolve(null)
+            return
+          }
+
+          const meta = normalizeFileMeta(data)
+          if (!meta) {
+            setState({ loading: false, progress: 0, error: 'ข้อมูลไฟล์ไม่ถูกต้อง' })
+            resolve(null)
+            return
+          }
+
           setState({ loading: false, progress: 100, error: null })
           resolve(meta)
         } catch {

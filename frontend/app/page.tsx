@@ -12,6 +12,7 @@ import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
 import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
+import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
 
 const STORAGE_KEY = 'aura:username'
@@ -24,7 +25,7 @@ function toGuestLine(m: ChatMessage): LineMessage {
     type: 'message',
     username: m.username,
     content: m.content ?? '',
-    file: m.file,
+    file: normalizeFileMeta(m.file),
     timestamp: m.timestamp,
     mine: false,
     reactions: m.reactions ?? [],
@@ -139,8 +140,8 @@ export default function Page() {
     setUsername(null)
   }
 
-  const handleSend = (content: string, file?: any, replyToId?: number) => {
-    chat.send(content, file, replyToId)
+  const handleSend = (content: string, file?: unknown, replyToId?: number) => {
+    chat.send(content, normalizeFileMeta(file), replyToId)
     setReplyTo(null)
   }
 

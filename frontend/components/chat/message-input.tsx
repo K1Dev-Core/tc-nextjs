@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { SendIcon, PaperclipIcon, SpinnerIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
-import { formatBytes, isImage } from '@/lib/file-utils'
+import { fileUrl, formatBytes, isImage } from '@/lib/file-utils'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { EmojiPickerModal } from './emoji-picker-modal'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
@@ -158,7 +158,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
       {pendingFile && (
         <div className="mb-2 flex items-center gap-2.5 glass-soft rounded-xl px-3 py-2 animate-fadein">
           {isImage(pendingFile) ? (
-            <img src={pendingFile.url.startsWith('http') ? pendingFile.url : `${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}${pendingFile.url}`} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+            <img src={fileUrl(pendingFile.url)} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-white/8 grid place-items-center shrink-0">
               <PaperclipIcon className="w-5 h-5 text-white/60" />
