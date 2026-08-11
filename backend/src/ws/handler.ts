@@ -29,6 +29,8 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
   broadcastUsers(channel.id)
 
   ws.on('message', (raw) => {
+    client.alive = true
+    client.missedPongs = 0
     let msg: ChatMessage
     try {
       msg = JSON.parse(raw.toString())
@@ -166,6 +168,7 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
 
   ws.on('pong', () => {
     client.alive = true
+    client.missedPongs = 0
   })
 
   ws.on('close', cleanup)
@@ -207,6 +210,6 @@ function sendChannelList(ws: WebSocket): void {
   }))
 }
 
-export function startHeartbeat(intervalMs = 30_000): NodeJS.Timeout {
+export function startHeartbeat(intervalMs = 60_000): NodeJS.Timeout {
   return setInterval(pingAll, intervalMs)
 }

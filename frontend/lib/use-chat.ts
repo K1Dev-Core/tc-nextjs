@@ -39,6 +39,20 @@ function toLine(m: ChatMessage, me: string): LineMessage {
   }
 }
 
+function mergeHistoryLines(current: LineMessage[], incoming: LineMessage[]): LineMessage[] {
+  if (current.length === 0) return incoming
+  const byDbId = new Map<number, LineMessage>()
+  for (const line of current) {
+    if (line.dbId) byDbId.set(line.dbId, line)
+  }
+  const merged = incoming.map((line) => {
+    const existing = line.dbId ? byDbId.get(line.dbId) : undefined
+    return existing ? { ...line, id: existing.id, queued: existing.queued } : line
+  })
+  const queued = current.filter((line) => line.queued)
+  return queued.length ? [...merged, ...queued] : merged
+}
+
 export type ConnStatus = 'connecting' | 'open' | 'closed'
 
 export function useChat(username: string | null) {
@@ -63,6 +77,8 @@ export function useChat(username: string | null) {
   const lastTypingSent = useRef(0)
   const oldestDbId = useRef<number | null>(null)
   const queueRef = useRef<PendingMessage[]>([])
+  const hasConnectedRef = useRef(false)
+  const statusGraceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const persistQueue = useCallback((queue = queueRef.current) => {
     if (typeof window === 'undefined' || !usernameRef.current) return
@@ -122,11 +138,14 @@ export function useChat(username: string | null) {
       setLoadingChannels(false)
       setLoadingMessages(false)
       setLoadingPins(false)
+      if (statusGraceTimer.current) clearTimeout(statusGraceTimer.current)
+      hasConnectedRef.current = false
       return
     }
     setLoadingChannels(true)
     setLoadingMessages(true)
     setLoadingPins(true)
+    hasConnectedRef.current = false
     queueRef.current = loadQueue(username)
     setQueuedCount(queueRef.current.length)
     let stopped = false
@@ -158,9 +177,12 @@ export function useChat(username: string | null) {
         case 'history': {
           if (!m.history) return
           const mapped = m.history.map((h) => toLine(h, me))
-          setLines(mapped)
+          setLines((prev) => {
+            const next = m.channel === channelRef.current ? mergeHistoryLines(prev, mapped) : mapped
+            if (m.channel) cacheLines(m.channel, next)
+            return next
+          })
           setTyping({})
-          if (m.channel) cacheLines(m.channel, mapped)
           if (m.pins) setPinnedMessages(m.pins.map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
           setLoadingPins(false)
           if (mapped.length > 0) {
@@ -252,10 +274,15 @@ export function useChat(username: string | null) {
       const url = `${WS_URL}?username=${encodeURIComponent(username)}&channel=${encodeURIComponent(ch)}`
       const ws = new WebSocket(url)
       wsRef.current = ws
-      setStatus('connecting')
+      if (!hasConnectedRef.current) setStatus('connecting')
 
       ws.onopen = () => {
         retry = 0
+        hasConnectedRef.current = true
+        if (statusGraceTimer.current) {
+          clearTimeout(statusGraceTimer.current)
+          statusGraceTimer.current = null
+        }
         setStatus('open')
         fetchChannels()
         flushQueue()
@@ -270,10 +297,14 @@ export function useChat(username: string | null) {
         handle(m)
       }
       ws.onclose = () => {
-        setStatus('closed')
         if (stopped) return
+        if (statusGraceTimer.current) clearTimeout(statusGraceTimer.current)
+        statusGraceTimer.current = setTimeout(() => {
+          setStatus('closed')
+          statusGraceTimer.current = null
+        }, hasConnectedRef.current ? 1800 : 0)
         retry += 1
-        const delay = Math.min(1000 * 2 ** retry, 8000)
+        const delay = hasConnectedRef.current ? Math.min(350 * 2 ** Math.min(retry, 4), 4000) : Math.min(1000 * 2 ** retry, 8000)
         reconnectTimer = setTimeout(connect, delay)
       }
       ws.onerror = () => {
@@ -285,6 +316,10 @@ export function useChat(username: string | null) {
     return () => {
       stopped = true
       clearTimeout(reconnectTimer)
+      if (statusGraceTimer.current) {
+        clearTimeout(statusGraceTimer.current)
+        statusGraceTimer.current = null
+      }
       wsRef.current?.close()
       wsRef.current = null
     }

@@ -4,6 +4,7 @@ export interface Client {
   ws: WebSocket
   username: string
   alive: boolean
+  missedPongs?: number
   channelId: number
 }
 
@@ -65,9 +66,11 @@ export function pingAll(): void {
   for (const c of clients) {
     if (c.ws.readyState !== WebSocket.OPEN) continue
     if (!c.alive) {
-      c.ws.terminate()
+      c.missedPongs = (c.missedPongs ?? 0) + 1
+      if (c.missedPongs >= 2) c.ws.terminate()
       continue
     }
+    c.missedPongs = 0
     c.alive = false
     c.ws.ping()
   }
