@@ -19,11 +19,6 @@ const EmojiPickerModal = dynamic(
   { ssr: false },
 )
 
-const MemePickerModal = dynamic(
-  () => import('./meme-picker-modal').then((mod) => mod.MemePickerModal),
-  { ssr: false },
-)
-
 const SfxPickerModal = dynamic(
   () => import('./sfx-picker-modal').then((mod) => mod.SfxPickerModal),
   { ssr: false },
@@ -115,8 +110,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
   const [pendingFile, setPendingFile] = useState<FileMeta | null>(null)
   const [uploadPreview, setUploadPreview] = useState<UploadPreviewState | null>(null)
   const [dragOver, setDragOver] = useState(false)
-  const [showEmoji, setShowEmoji] = useState(false)
-  const [showMeme, setShowMeme] = useState(false)
+  const [pickerTab, setPickerTab] = useState<'emoji' | 'meme' | null>(null)
   const [showSfx, setShowSfx] = useState(false)
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
   const taRef = useRef<HTMLTextAreaElement>(null)
@@ -389,17 +383,13 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         />
       )}
 
-      {showEmoji && (
+      {pickerTab && (
         <EmojiPickerModal
+          key={pickerTab}
+          initialTab={pickerTab}
           onPick={insertEmoji}
-          onClose={() => setShowEmoji(false)}
-        />
-      )}
-
-      {showMeme && (
-        <MemePickerModal
-          onPick={sendMeme}
-          onClose={() => setShowMeme(false)}
+          onPickMeme={sendMeme}
+          onClose={() => setPickerTab(null)}
         />
       )}
 
@@ -439,7 +429,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         <input ref={fileInputRef} type="file" onChange={onFileChange} className="hidden" />
         <button
           type="button"
-          onClick={() => setShowEmoji(true)}
+          onClick={() => setPickerTab('emoji')}
           disabled={disabled}
           className="grid place-items-center w-9 h-9 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
           aria-label="อิโมจิ"
@@ -448,7 +438,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         </button>
         <button
           type="button"
-          onClick={() => setShowMeme(true)}
+          onClick={() => setPickerTab('meme')}
           disabled={disabled || loading}
           className="grid place-items-center w-9 h-9 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
           aria-label="มีม"
