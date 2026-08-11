@@ -8,6 +8,7 @@ import { fileUrl, formatBytes } from '@/lib/file-utils'
 import { QUICK_EMOJIS, EMOJI_MAP, emojiUrl } from '@/lib/emoji'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
+import { AudioPlayer } from './audio-player'
 
 
 const EmojiPickerModal = dynamic(
@@ -69,7 +70,7 @@ const UploadPreviewCard = memo(function UploadPreviewCard({ preview, file, loadi
     <div className="mb-2 glass-soft rounded-xl overflow-hidden animate-fadein">
       {src && kind === 'image' && <img src={src} alt={name} className="max-h-52 w-full object-contain bg-black/20" />}
       {src && kind === 'video' && <video src={src} controls preload="metadata" className="max-h-56 w-full bg-black/20" />}
-      {src && kind === 'audio' && <div className="p-3"><audio src={src} controls preload="metadata" className="w-full" /></div>}
+      {src && kind === 'audio' && <div className="p-3"><AudioPlayer src={src} name={name} size={size} className="max-w-none" /></div>}
       {src && kind === 'pdf' && <iframe src={src} title={name} className="h-56 w-full bg-white" />}
       {kind === 'text' && preview?.text && (
         <pre className="max-h-44 overflow-auto scroll-slim bg-black/25 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">{preview.text}</pre>

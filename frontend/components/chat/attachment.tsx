@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import type { FileMeta } from '@/lib/types'
 import { fileUrl, isImage, isVideo, isAudio, formatBytes } from '@/lib/file-utils'
 import { DownloadIcon, FileIcon, CloseIcon, ImageIcon } from '@/components/ui/icons'
+import { AudioPlayer } from './audio-player'
 
 interface AttachmentProps {
   file: FileMeta
@@ -110,15 +111,7 @@ function VideoAttachment({ file }: { file: FileMeta }) {
 }
 
 function AudioAttachment({ file }: { file: FileMeta }) {
-  return (
-    <div className="mt-1.5 glass-soft rounded-xl p-3 max-w-[320px]">
-      <div className="flex items-center gap-2 mb-2 text-white/70 text-sm min-w-0">
-        <span className="truncate">{file.name}</span>
-        <span className="text-white/30 text-xs shrink-0">{formatBytes(file.size)}</span>
-      </div>
-      <audio src={fileUrl(file.url)} controls preload="metadata" className="w-full" />
-    </div>
-  )
+  return <AudioPlayer src={fileUrl(file.url)} name={file.name} size={file.size} className="mt-1.5" />
 }
 
 function FileCard({ file }: { file: FileMeta }) {
