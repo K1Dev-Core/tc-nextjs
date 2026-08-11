@@ -13,6 +13,8 @@ import {
 } from '../db/queries.js'
 
 const MAX_CONTENT = 4000
+const SFX_COOLDOWN_MS = 3500
+const SFX_URL_PREFIX = 'https://www.myinstants.com/media/sounds/'
 
 export function handleConnection(ws: WebSocket, username: string, channelName: string): void {
   const channel = getChannelByName(channelName) ?? getChannelById(1)!
@@ -40,6 +42,26 @@ export function handleConnection(ws: WebSocket, username: string, channelName: s
 
     if (msg.type === 'typing') {
       broadcast({ type: 'typing', username, timestamp: new Date().toISOString() }, client.channelId, client)
+      return
+    }
+
+    if (msg.type === 'sfx') {
+      const now = Date.now()
+      if (client.lastSfxAt && now - client.lastSfxAt < SFX_COOLDOWN_MS) return
+      const item = msg.sfx
+      if (!item?.id || !item.name || !item.url) return
+      if (!item.url.startsWith(SFX_URL_PREFIX)) return
+      client.lastSfxAt = now
+      broadcast({
+        type: 'sfx',
+        username,
+        timestamp: new Date().toISOString(),
+        sfx: {
+          id: String(item.id).slice(0, 60),
+          name: String(item.name).slice(0, 80),
+          url: item.url.slice(0, 300),
+        },
+      }, client.channelId, client)
       return
     }
 

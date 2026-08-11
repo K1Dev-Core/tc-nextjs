@@ -302,6 +302,7 @@ export default function Page() {
               draftKey={activeChannelName}
               me={displayName}
               onPinCommand={chat.togglePin}
+              onSfx={isGuest ? undefined : chat.sendSfx}
             />
           )}
         </div>

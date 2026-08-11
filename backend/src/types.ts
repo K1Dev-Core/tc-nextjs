@@ -3,7 +3,7 @@ export type MessageType =
   | 'channels' | 'channel_switch' | 'channel_created' | 'create_channel'
   | 'reply' | 'react' | 'unreact' | 'reaction_update'
   | 'pin' | 'unpin' | 'pins_update'
-  | 'avatar_update'
+  | 'avatar_update' | 'sfx'
 
 export interface FileMeta {
   url: string
@@ -37,6 +37,7 @@ export interface ChatMessage {
   pinnedAt?: string
   pins?: ChatMessage[]
   avatar?: string | null
+  sfx?: { id: string; name: string; url: string }
 }
 
 export interface MessageRow {

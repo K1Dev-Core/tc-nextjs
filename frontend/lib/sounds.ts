@@ -4,6 +4,8 @@
 let ctx: AudioContext | null = null
 let enabled = true
 
+export const SOUND_CHANGE_EVENT = 'aura:sound-change'
+
 try {
   const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('aura:sound') : null
   if (saved !== null) enabled = saved === '1'
@@ -13,6 +15,7 @@ export function isSoundEnabled() { return enabled }
 export function setSoundEnabled(v: boolean) {
   enabled = v
   try { localStorage.setItem('aura:sound', v ? '1' : '0') } catch {}
+  try { window.dispatchEvent(new CustomEvent(SOUND_CHANGE_EVENT, { detail: v })) } catch {}
 }
 
 function ac(): AudioContext | null {
@@ -61,6 +64,41 @@ function sweep(from: number, to: number, dur: number, type: OscillatorType = 'si
   osc.stop(t0 + dur + 0.05)
 }
 
+const remoteAudio = new Map<string, HTMLAudioElement>()
+
+function playRemote(url: string, volume = 0.9) {
+  if (!enabled || typeof window === 'undefined') return false
+  try {
+    let audio = remoteAudio.get(url)
+    if (!audio) {
+      audio = new Audio(url)
+      audio.preload = 'auto'
+      audio.crossOrigin = 'anonymous'
+      remoteAudio.set(url, audio)
+    }
+    audio.pause()
+    audio.currentTime = 0
+    audio.volume = Math.max(0, Math.min(1, volume))
+    void audio.play().catch(() => void 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function preloadRemoteSfx(urls: string[]) {
+  if (typeof window === 'undefined') return
+  for (const url of urls) {
+    if (remoteAudio.has(url)) continue
+    try {
+      const audio = new Audio(url)
+      audio.preload = 'auto'
+      audio.crossOrigin = 'anonymous'
+      remoteAudio.set(url, audio)
+    } catch {}
+  }
+}
+
 export const sfx = {
   send() {
     if (!enabled) return
@@ -97,5 +135,8 @@ export const sfx = {
     tone(659, 0.1, 'sine', 0.08, 0.1)
     tone(784, 0.15, 'sine', 0.08, 0.2)
     tone(1047, 0.2, 'sine', 0.06, 0.3)
+  },
+  remote(url: string, volume = 0.9) {
+    return playRemote(url, volume)
   },
 }

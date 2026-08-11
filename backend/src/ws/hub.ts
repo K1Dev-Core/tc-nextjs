@@ -5,6 +5,7 @@ export interface Client {
   username: string
   alive: boolean
   missedPongs?: number
+  lastSfxAt?: number
   channelId: number
 }
 

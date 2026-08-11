@@ -4,12 +4,14 @@ import { useEffect, useRef, useState, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
 import { SendIcon, PaperclipIcon, CloseIcon, EmojiIcon, ImageIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
+import { isSoundEnabled, SOUND_CHANGE_EVENT } from '@/lib/sounds'
 import { fileUrl, formatBytes } from '@/lib/file-utils'
 import { QUICK_EMOJIS, EMOJI_MAP, emojiUrl } from '@/lib/emoji'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
 import { AudioPlayer } from './audio-player'
 import type { MemeTemplate } from '@/lib/memes'
+import type { RemoteSfxItem } from '@/lib/remote-sfx'
 
 
 const EmojiPickerModal = dynamic(
@@ -19,6 +21,11 @@ const EmojiPickerModal = dynamic(
 
 const MemePickerModal = dynamic(
   () => import('./meme-picker-modal').then((mod) => mod.MemePickerModal),
+  { ssr: false },
+)
+
+const SfxPickerModal = dynamic(
+  () => import('./sfx-picker-modal').then((mod) => mod.SfxPickerModal),
   { ssr: false },
 )
 
@@ -32,6 +39,7 @@ interface MessageInputProps {
   draftKey: string
   me: string
   onPinCommand?: (messageId: number) => void
+  onSfx?: (item: RemoteSfxItem) => boolean
 }
 
 const DRAFT_PREFIX = 'aura:draft:'
@@ -102,13 +110,15 @@ const UploadPreviewCard = memo(function UploadPreviewCard({ preview, file, loadi
   )
 })
 
-export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo, onCancelReply, draftKey, me, onPinCommand }: MessageInputProps) {
+export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo, onCancelReply, draftKey, me, onPinCommand, onSfx }: MessageInputProps) {
   const [value, setValue] = useState('')
   const [pendingFile, setPendingFile] = useState<FileMeta | null>(null)
   const [uploadPreview, setUploadPreview] = useState<UploadPreviewState | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const [showMeme, setShowMeme] = useState(false)
+  const [showSfx, setShowSfx] = useState(false)
+  const [soundOn, setSoundOn] = useState(isSoundEnabled())
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skipDraftSave = useRef(false)
@@ -138,6 +148,12 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
   useEffect(() => () => clearPreview(), [clearPreview])
 
   useEffect(() => { resize() }, [value])
+
+  useEffect(() => {
+    const handler = (e: Event) => setSoundOn(Boolean((e as CustomEvent<boolean>).detail))
+    window.addEventListener(SOUND_CHANGE_EVENT, handler)
+    return () => window.removeEventListener(SOUND_CHANGE_EVENT, handler)
+  }, [])
 
   useEffect(() => {
     if (!draftKey || typeof window === 'undefined') return
@@ -387,6 +403,13 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         />
       )}
 
+      {showSfx && onSfx && (
+        <SfxPickerModal
+          onPick={onSfx}
+          onClose={() => setShowSfx(false)}
+        />
+      )}
+
       {emojiQuery && (
         <div className="mb-2 glass rounded-2xl p-1.5 flex flex-wrap gap-1 animate-slideup">
           {NAMED_EMOJIS.filter((item) => item.name.includes(emojiQuery)).slice(0, 6).map((item) => (
@@ -433,6 +456,16 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         >
           <ImageIcon className="w-5 h-5" />
         </button>
+        <button
+          type="button"
+          onClick={() => setShowSfx(true)}
+          disabled={disabled || loading || !soundOn || !onSfx}
+          className="grid place-items-center w-9 h-9 rounded-xl text-[10px] font-black tracking-tight text-white/45 hover:text-white/80 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
+          aria-label="SFX"
+          title={soundOn ? 'SFX' : 'เสียงปิดอยู่'}
+        >
+          SFX
+        </button>
         <textarea
           ref={taRef}
           rows={1}
@@ -473,7 +506,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
       </div>
       <div className="mt-1.5 px-1 text-[10px] text-white/25 hidden sm:flex items-center justify-between">
         <span>Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัด</span>
-        <span>ลากไฟล์ / Ctrl+V / มีม ส่งรูปทันที · สูงสุด 50MB</span>
+        <span>ลากไฟล์ / Ctrl+V / มีม / SFX · สูงสุด 50MB</span>
       </div>
     </div>
   )

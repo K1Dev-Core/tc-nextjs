@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, FileMeta, LineMessage, ChannelInfo, ReactionInfo } from './types'
 import { WS_URL, API_BASE } from './room'
-import { sfx } from './sounds'
+import { isSoundEnabled, sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
 import { normalizeFileMeta } from './file-utils'
 import { cacheLines, getCachedLines } from './client-cache'
+import type { RemoteSfxItem } from './remote-sfx'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
@@ -256,6 +257,11 @@ export function useChat(username: string | null) {
           updateAvatarCache(m.username, m.avatar ?? null)
           break
         }
+        case 'sfx': {
+          if (m.username === me || !m.sfx?.url) return
+          sfx.remote(m.sfx.url)
+          break
+        }
       }
     }
 
@@ -361,6 +367,19 @@ export function useChat(username: string | null) {
     setLines((prev) => [...prev, queuedLine])
     sfx.send()
   }, [persistQueue])
+
+  const sendSfx = useCallback((item: RemoteSfxItem) => {
+    if (!isSoundEnabled()) return false
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return false
+    const played = sfx.remote(item.url)
+    if (!played) return false
+    ws.send(JSON.stringify({
+      type: 'sfx',
+      sfx: { id: item.id, name: item.name, url: item.url },
+    }))
+    return true
+  }, [])
 
   const sendTyping = useCallback(() => {
     const ws = wsRef.current
@@ -474,7 +493,7 @@ export function useChat(username: string | null) {
 
   return {
     lines, users, typing, status, hasMore, loadingMore, loadMore,
-    send, sendTyping, toggleReaction, togglePin,
+    send, sendTyping, sendSfx, toggleReaction, togglePin,
     channels, activeChannel, switchChannel, createChannel,
     pinnedMessages, loadPinnedMessages,
     loadingChannels, loadingMessages, loadingPins,
