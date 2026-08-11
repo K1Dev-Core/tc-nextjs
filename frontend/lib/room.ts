@@ -1,11 +1,9 @@
 export const ROOM_NAME = 'นกพิราบ'
 
-const browserProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws'
-const browserHost = typeof window !== 'undefined' ? window.location.host : 'localhost:3000'
-
-// Keep backend origin out of client bundles and browser Network URLs.
-// Next.js rewrites /api/backend/:path* to BACKEND_URL server-side.
+// Keep HTTP API requests same-origin in browser Network via Next rewrite.
 const API_BASE = '/api/backend'
-const WS_URL = `${browserProtocol}://${browserHost}/api/backend/ws`
+
+// Vercel rewrites do not proxy WebSocket upgrade reliably, so WS must connect to backend directly.
+const WS_URL = 'wss://print-code.k1god.com/ws'
 
 export { API_BASE, WS_URL }
