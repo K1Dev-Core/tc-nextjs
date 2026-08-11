@@ -63,6 +63,62 @@ body {
   }
 }
 
+
+@keyframes code-rain {
+  0% { transform: translate3d(0, -33.333%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes code-grid {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 92px 92px, -92px 92px; }
+}
+
+@keyframes code-drift-a {
+  0%, 100% { transform: translate3d(-6%, 0, 0) rotate(-7deg); }
+  50% { transform: translate3d(2%, -2%, 0) rotate(-5deg); }
+}
+
+@keyframes code-drift-b {
+  0%, 100% { transform: translate3d(-2%, 1%, 0) rotate(4deg); }
+  50% { transform: translate3d(4%, -1%, 0) rotate(6deg); }
+}
+
+@keyframes code-drift-c {
+  0%, 100% { transform: translate3d(3%, -1%, 0) rotate(-3deg); }
+  50% { transform: translate3d(-3%, 2%, 0) rotate(-6deg); }
+}
+
+@keyframes code-drift-d {
+  0%, 100% { transform: translate3d(8%, 0, 0) rotate(7deg); }
+  50% { transform: translate3d(1%, 2%, 0) rotate(4deg); }
+}
+
+.animate-code-rain {
+  animation: code-rain linear infinite;
+  will-change: transform;
+}
+
+.animate-code-grid {
+  animation: code-grid 18s linear infinite;
+  will-change: background-position;
+}
+
+.code-drift-a,
+.code-drift-b,
+.code-drift-c,
+.code-drift-d {
+  animation-name: code-drift-a;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+}
+
+.code-drift-b { animation-name: code-drift-b; }
+.code-drift-c { animation-name: code-drift-c; }
+.code-drift-d { animation-name: code-drift-d; }
+
 @keyframes shimmer-skeleton {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }

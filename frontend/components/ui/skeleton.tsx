@@ -3,7 +3,7 @@
 
 export function FullScreenLoader() {
   return (
-    <div className="h-[100dvh] w-screen grid place-items-center relative">
+    <div className="h-[100dvh] w-screen grid place-items-center relative overflow-hidden">
       <div className="flex flex-col items-center gap-4 animate-scalein relative">
         <div className="text-5xl font-black tracking-tighter text-white/90 select-none animate-pulse">T</div>
         <div className="skeleton h-2.5 w-24 rounded-full" />
