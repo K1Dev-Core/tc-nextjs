@@ -7,7 +7,7 @@ import { isSoundEnabled, sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
 import { normalizeFileMeta } from './file-utils'
 import { cacheLines, getCachedLines } from './client-cache'
-import type { RemoteSfxItem } from './remote-sfx'
+import { decodeSfxSignal, encodeSfxSignal, type RemoteSfxItem } from './remote-sfx'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
@@ -177,7 +177,7 @@ export function useChat(username: string | null) {
         }
         case 'history': {
           if (!m.history) return
-          const mapped = m.history.map((h) => toLine(h, me))
+          const mapped = m.history.filter((h) => !decodeSfxSignal(h.content)).map((h) => toLine(h, me))
           setLines((prev) => {
             const next = m.channel === channelRef.current ? mergeHistoryLines(prev, mapped) : mapped
             if (m.channel) cacheLines(m.channel, next)
@@ -200,6 +200,11 @@ export function useChat(username: string | null) {
           break
         }
         case 'message': {
+          const sfxSignal = decodeSfxSignal(m.content)
+          if (sfxSignal) {
+            if (m.username !== me) sfx.remote(sfxSignal.url)
+            return
+          }
           if (!m.content && !m.file) return
           setLines((prev) => {
             const next = [...prev, toLine(m, me)]
@@ -375,8 +380,8 @@ export function useChat(username: string | null) {
     const played = sfx.remote(item.url)
     if (!played) return false
     ws.send(JSON.stringify({
-      type: 'sfx',
-      sfx: { id: item.id, name: item.name, url: item.url },
+      type: 'message',
+      content: encodeSfxSignal(item),
     }))
     return true
   }, [])

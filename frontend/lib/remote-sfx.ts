@@ -8,6 +8,40 @@ export interface RemoteSfxItem {
 }
 
 export const SFX_COOLDOWN_MS = 60_000
+const SFX_SIGNAL_PREFIX = '\u2063\u2063'
+const SFX_ZERO = '\u200b'
+const SFX_ONE = '\u200c'
+
+function encodeInvisibleAscii(value: string) {
+  return [...value].map((char) => char.charCodeAt(0).toString(2).padStart(8, '0').replaceAll('0', SFX_ZERO).replaceAll('1', SFX_ONE)).join('')
+}
+
+function decodeInvisibleAscii(value: string) {
+  if (value.length % 8 !== 0) return ''
+  let out = ''
+  for (let i = 0; i < value.length; i += 8) {
+    const byte = value.slice(i, i + 8)
+    let bits = ''
+    for (const char of byte) {
+      if (char === SFX_ZERO) bits += '0'
+      else if (char === SFX_ONE) bits += '1'
+      else return ''
+    }
+    out += String.fromCharCode(parseInt(bits, 2))
+  }
+  return out
+}
+
+export function encodeSfxSignal(item: Pick<RemoteSfxItem, 'id'>) {
+  return `${SFX_SIGNAL_PREFIX}${encodeInvisibleAscii(item.id)}`
+}
+
+export function decodeSfxSignal(content?: string) {
+  if (!content?.startsWith(SFX_SIGNAL_PREFIX)) return null
+  const id = decodeInvisibleAscii(content.slice(SFX_SIGNAL_PREFIX.length))
+  if (!id) return null
+  return findRemoteSfx(id) ?? null
+}
 
 export const REMOTE_SFX: RemoteSfxItem[] = [
   {
