@@ -31,12 +31,30 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   const isFirstLoad = useRef(true)
   const prevChannelRef = useRef(scrollTrigger)
   const scrollIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const settleScrollTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current
     if (!el) return
     el.scrollTo({ top: el.scrollHeight, behavior })
   }, [])
+
+  const settleToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    settleScrollTimers.current.forEach(clearTimeout)
+    settleScrollTimers.current = []
+
+    const run = () => scrollToBottom(behavior)
+    run()
+    requestAnimationFrame(() => {
+      run()
+      requestAnimationFrame(run)
+    })
+
+    // Late assets / fonts can expand rows after first paint. Keep first open pinned briefly.
+    for (const delay of [80, 180, 360]) {
+      settleScrollTimers.current.push(setTimeout(run, delay))
+    }
+  }, [scrollToBottom])
 
   const rows = useMemo(() => lines.map((line, idx) => {
     const prev = lines[idx - 1]
@@ -86,6 +104,8 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (scrollIdleTimer.current) clearTimeout(scrollIdleTimer.current)
+    settleScrollTimers.current.forEach(clearTimeout)
+    settleScrollTimers.current = []
     delete document.body.dataset.chatScrolling
   }, [])
 
@@ -102,7 +122,7 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   // Instant jump on first load / channel switch — no smooth animation.
   useLayoutEffect(() => {
     const el = scrollRef.current
-    if (!el) return
+    if (!el || loading) return
     if (prevHeight.current > 0 && lines.length > 0) {
       const newHeight = el.scrollHeight
       el.scrollTop = newHeight - prevHeight.current
@@ -111,25 +131,35 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
     }
     if (isFirstLoad.current && lines.length > 0) {
       isFirstLoad.current = false
-      // Double rAF ensures layout is complete (images pending, etc.)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight
-        })
-      })
+      atBottom.current = true
+      settleToBottom('auto')
     }
-  }, [lines])
+  }, [lines, loading, settleToBottom])
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || loading) return
+
+    const ro = new ResizeObserver(() => {
+      if (atBottom.current && prevHeight.current === 0) {
+        el.scrollTop = el.scrollHeight
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [loading])
 
   // Smooth scroll for subsequent messages only (not first load)
   useEffect(() => {
+    if (loading) return
     if (atBottom.current && !isFirstLoad.current) {
       scrollToBottom('smooth')
     }
-  }, [lines, typingUsers, scrollToBottom])
+  }, [lines, typingUsers, loading, scrollToBottom])
 
   useEffect(() => {
-    scrollToBottom('auto')
-  }, [scrollTrigger, scrollToBottom])
+    if (!loading) settleToBottom('auto')
+  }, [scrollTrigger, loading, settleToBottom])
 
   if (loading) return <MessageListSkeleton />
 
