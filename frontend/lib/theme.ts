@@ -1,6 +1,6 @@
 export type ThemeName = 'aurora' | 'matrix' | 'minimal' | 'cyber' | 'plain' | 'plain-dark'
 export const THEME_KEY = 'aura:theme'
-export const DEFAULT_THEME: ThemeName = 'aurora'
+export const DEFAULT_THEME: ThemeName = 'plain'
 export const THEMES: ThemeName[] = ['aurora', 'matrix', 'minimal', 'cyber', 'plain', 'plain-dark']
 
 export function isThemeName(value: string | null): value is ThemeName {
