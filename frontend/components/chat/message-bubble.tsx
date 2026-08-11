@@ -283,6 +283,7 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
         <div className={`flex items-center gap-0.5 mt-0.5 relative ${mine ? 'flex-row-reverse' : 'flex-row'}`}>
           {showPicker && line.dbId && (
             <ReactionPicker
+              align={mine ? 'right' : 'left'}
               onPick={(emoji) => { if (line.dbId) onReact(line.dbId, emoji) }}
               onClose={() => setShowPicker(false)}
             />
