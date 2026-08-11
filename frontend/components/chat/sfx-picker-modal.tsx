@@ -60,7 +60,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
           <div>
             <div className="text-[14px] font-semibold">SFX Meme</div>
             <div className="text-[10px] text-white/35">
-              {!soundOn ? 'ปิดเสียงอยู่ · เปิดเสียงก่อนถึงกดได้' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : 'ปุ่มแดงแบบ MyInstants · กดแล้วส่งเสียงทั้งห้อง'}
+              {!soundOn ? 'ปิดเสียงอยู่ · เปิดเสียงก่อนถึงกดได้' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : 'เสียงอยู่ใน frontend แล้ว · กดแล้วดังทั้งห้อง'}
             </div>
           </div>
           <button
@@ -72,8 +72,8 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 overflow-y-auto scroll-slim">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="p-3 sm:p-4 overflow-y-auto scroll-slim">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {REMOTE_SFX.map((item) => (
               <button
                 key={item.id}
@@ -81,16 +81,18 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
                 onClick={() => play(item)}
                 disabled={locked}
                 title={soundOn ? item.name : 'เสียงปิดอยู่'}
-                className="group flex flex-col items-center gap-2 rounded-2xl glass-soft px-3 py-4 transition hover:bg-white/10 disabled:opacity-45 disabled:cursor-not-allowed"
+                className="group flex items-center gap-3 rounded-xl glass-soft px-3 py-2.5 text-left transition hover:bg-white/10 active:scale-[0.99] disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 <span
-                  className="relative grid place-items-center w-24 h-24 rounded-full text-3xl font-black text-white shadow-[inset_0_-10px_0_rgba(0,0,0,0.18),0_12px_24px_rgba(0,0,0,0.25)] border-4 border-white/25 active:translate-y-1 active:shadow-[inset_0_-5px_0_rgba(0,0,0,0.18),0_6px_12px_rgba(0,0,0,0.25)] transition"
+                  className="grid place-items-center w-9 h-9 rounded-lg text-lg text-white shrink-0 shadow-inner"
                   style={{ backgroundColor: item.color }}
                 >
                   {cooldownLeft > 0 ? cooldownText : item.emoji}
                 </span>
-                <span className="max-w-full truncate text-[12px] text-white/80 font-medium">{item.name}</span>
-                <span className="text-[10px] text-white/30">สั้น · ephemeral</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] text-white/85 font-medium">{item.name}</span>
+                  <span className="block truncate text-[10px] text-white/32">กดเล่น · ไม่ค้าง history</span>
+                </span>
               </button>
             ))}
           </div>
