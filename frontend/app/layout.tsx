@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CodeBackground } from '@/components/ui/code-background'
+import { CursorPixelTrail } from '@/components/ui/cursor-pixel-trail'
 
 export const metadata: Metadata = {
   title: 'นกพิราบ — แชทเรียลไทม์',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-aurora">
         <CodeBackground />
         {children}
+        <CursorPixelTrail />
       </body>
     </html>
   )
