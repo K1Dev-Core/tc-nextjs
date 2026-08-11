@@ -57,4 +57,6 @@ export interface LineMessage {
   replyToUsername?: string
   reactions?: ReactionInfo[]
   pinned?: boolean
+  queued?: boolean
 }
+

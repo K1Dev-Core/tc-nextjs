@@ -22,15 +22,18 @@ function AttachmentBase({ file }: AttachmentProps) {
 export const Attachment = memo(AttachmentBase)
 
 function ImageAttachment({ file, onOpen, lightbox, onClose }: { file: FileMeta; onOpen: () => void; onClose: () => void; lightbox: boolean }) {
+  const [loaded, setLoaded] = useState(false)
   return (
     <>
-      <div className="relative mt-1.5 rounded-xl overflow-hidden cursor-pointer group max-w-[280px]" onClick={onOpen}>
+      <div className="relative mt-1.5 rounded-xl overflow-hidden cursor-pointer group max-w-[280px] min-h-[120px] bg-white/5" onClick={onOpen}>
+        {!loaded && <div className="absolute inset-0 skeleton opacity-70" />}
         <img
           src={fileUrl(file.url)}
           alt={file.name}
           loading="lazy"
           decoding="async"
-          className="block max-w-full max-h-[240px] object-cover transition group-hover:opacity-90"
+          onLoad={() => setLoaded(true)}
+          className={`block max-w-full max-h-[240px] object-cover transition duration-300 group-hover:opacity-90 ${loaded ? 'blur-0 opacity-100' : 'blur-md opacity-40'}`}
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-end p-2 opacity-0 group-hover:opacity-100">
           <span className="text-[10px] text-white/90 truncate">{file.name}</span>

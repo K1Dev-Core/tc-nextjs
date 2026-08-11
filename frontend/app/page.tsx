@@ -6,6 +6,7 @@ import { ChannelSidebar } from '@/components/chat/channel-sidebar'
 import { ChatHeader } from '@/components/chat/chat-header'
 import { ChatMessages } from '@/components/chat/chat-messages'
 import { MessageInput } from '@/components/chat/message-input'
+import { CommandPalette } from '@/components/chat/command-palette'
 import { FullScreenLoader, PinnedViewSkeleton } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
@@ -13,6 +14,7 @@ import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
 import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
+import { DEFAULT_THEME, THEME_KEY, isThemeName, type ThemeName } from '@/lib/theme'
 
 
 const UsernameModal = dynamic(
@@ -54,6 +56,8 @@ export default function Page() {
   const [replyTo, setReplyTo] = useState<LineMessage | null>(null)
   const [showLogin, setShowLogin] = useState(false)
   const [pinnedOpen, setPinnedOpen] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [theme, setTheme] = useState<ThemeName>(DEFAULT_THEME)
 
   const [guestChannels, setGuestChannels] = useState<ChannelInfo[]>([])
   const [guestLines, setGuestLines] = useState<LineMessage[]>([])
@@ -68,7 +72,26 @@ export default function Page() {
   useEffect(() => {
     setMounted(true)
     const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem(THEME_KEY) : null
     if (saved) setUsername(saved)
+    if (isThemeName(savedTheme)) setTheme(savedTheme)
+  }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.body.dataset.theme = theme
+    localStorage.setItem(THEME_KEY, theme)
+  }, [theme])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setCommandOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
   const chat = useChat(mounted ? username : null)
@@ -158,6 +181,14 @@ export default function Page() {
     setReplyTo(null)
   }
 
+  const openUpload = useCallback(() => {
+    window.dispatchEvent(new Event('chat:open-file'))
+  }, [])
+
+  const focusInput = useCallback(() => {
+    window.dispatchEvent(new Event('chat:focus-input'))
+  }, [])
+
   const requireLogin = useCallback(() => setShowLogin(true), [])
 
   const selectChannel = useCallback((name: string) => {
@@ -171,7 +202,7 @@ export default function Page() {
   }, [isGuest, chat.switchChannel])
 
   const displayName = username ?? ''
-  const isReady = chat.status === 'open' && chat.activeChannel !== ''
+  const isReady = chat.activeChannel !== ''
   const isPinnedView = pinnedOpen
   const scrollTrigger = isGuest ? guestActive : chat.activeChannel
   const activeChannelName = isGuest ? (guestActive || 'นกพิราบ') : (chat.activeChannel || 'นกพิราบ')
@@ -208,6 +239,7 @@ export default function Page() {
             pinnedCount={displayedPins.length}
             showPinButton={!isPinnedView}
             loading={isGuest ? guestLoadingChannels : chat.loadingChannels}
+            onOpenCommand={() => setCommandOpen(true)}
           />
           {isPinnedView ? (
             <PinnedView
@@ -234,7 +266,7 @@ export default function Page() {
             <>
               {chat.status !== 'open' && (
                 <div className="px-4 sm:px-6 py-2 text-[11px] text-amber-200/80 bg-amber-500/10 border-b border-amber-300/10 flex items-center justify-between shrink-0">
-                  <span>{chat.status === 'connecting' ? 'กำลังเชื่อมต่อใหม่…' : 'ขาดการเชื่อมต่อ — ลองใหม่'}</span>
+                  <span>{chat.status === 'connecting' ? 'กำลังเชื่อมต่อใหม่…' : 'ออฟไลน์ — ข้อความใหม่จะเข้าคิวรอส่ง'}{chat.queuedCount > 0 ? ` · รอส่ง ${chat.queuedCount}` : ''}</span>
                   <button onClick={changeName} className="text-white/50 hover:text-white/80 transition underline underline-offset-2">เปลี่ยนชื่อ</button>
                 </div>
               )}
@@ -263,13 +295,29 @@ export default function Page() {
             <MessageInput
               onSend={isGuest ? requireLogin : handleSend}
               onTyping={isGuest ? NOOP : chat.sendTyping}
-              disabled={isGuest || chat.status !== 'open'}
-              placeholder={isGuest ? 'เข้าสู่ระบบเพื่อส่งข้อความ' : `ส่งข้อความใน ${chat.activeChannel || 'นกพิราบ'}`}
+              disabled={isGuest}
+              placeholder={isGuest ? 'เข้าสู่ระบบเพื่อส่งข้อความ' : chat.status === 'open' ? `ส่งข้อความใน ${chat.activeChannel || 'นกพิราบ'}` : 'ออฟไลน์ได้ พิมพ์ไว้ก่อน เดี๋ยวส่งให้ตอนต่อใหม่'}
               replyTo={replyTo}
               onCancelReply={() => setReplyTo(null)}
+              draftKey={activeChannelName}
+              me={displayName}
+              onPinCommand={chat.togglePin}
             />
           )}
         </div>
+
+        <CommandPalette
+          open={commandOpen}
+          channels={isGuest ? guestChannels : chat.channels}
+          activeChannel={activeChannelName}
+          theme={theme}
+          onClose={() => setCommandOpen(false)}
+          onSelectChannel={selectChannel}
+          onOpenPinned={() => setPinnedOpen(true)}
+          onOpenUpload={openUpload}
+          onFocusInput={focusInput}
+          onSetTheme={setTheme}
+        />
 
         {showLogin && (
           <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center">

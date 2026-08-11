@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { SendIcon, PaperclipIcon, SpinnerIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
 import { fileUrl, formatBytes, isImage } from '@/lib/file-utils'
+import { QUICK_EMOJIS, EMOJI_MAP, emojiUrl } from '@/lib/emoji'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
 
@@ -21,16 +22,24 @@ interface MessageInputProps {
   placeholder?: string
   replyTo: LineMessage | null
   onCancelReply: () => void
+  draftKey: string
+  me: string
+  onPinCommand?: (messageId: number) => void
 }
 
-export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo, onCancelReply }: MessageInputProps) {
+const DRAFT_PREFIX = 'aura:draft:'
+const NAMED_EMOJIS = QUICK_EMOJIS.map((char) => ({ char, name: EMOJI_MAP[char]?.name.toLowerCase() ?? char.toLowerCase() }))
+
+export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo, onCancelReply, draftKey, me, onPinCommand }: MessageInputProps) {
   const [value, setValue] = useState('')
   const [pendingFile, setPendingFile] = useState<FileMeta | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const skipDraftSave = useRef(false)
   const { loading, progress, error, upload, reset } = useUpload()
+  const [emojiQuery, setEmojiQuery] = useState('')
 
   const resize = () => {
     const el = taRef.current
@@ -40,6 +49,38 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
   }
 
   useEffect(() => { resize() }, [value])
+
+  useEffect(() => {
+    if (!draftKey || typeof window === 'undefined') return
+    skipDraftSave.current = true
+    setValue(localStorage.getItem(`${DRAFT_PREFIX}${draftKey}`) ?? '')
+    setPendingFile(null)
+    reset()
+  }, [draftKey, reset])
+
+  useEffect(() => {
+    if (!draftKey || typeof window === 'undefined') return
+    if (skipDraftSave.current) {
+      skipDraftSave.current = false
+      return
+    }
+    const key = `${DRAFT_PREFIX}${draftKey}`
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  }, [draftKey, value])
+
+  useEffect(() => {
+    const openFile = () => {
+      if (!disabled && !loading) fileInputRef.current?.click()
+    }
+    const focusInput = () => taRef.current?.focus()
+    window.addEventListener('chat:open-file', openFile)
+    window.addEventListener('chat:focus-input', focusInput)
+    return () => {
+      window.removeEventListener('chat:open-file', openFile)
+      window.removeEventListener('chat:focus-input', focusInput)
+    }
+  }, [disabled, loading])
 
   useEffect(() => {
     if (replyTo) {
@@ -114,10 +155,51 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
     })
   }
 
+  const applyEmojiToken = (emoji: string) => {
+    const el = taRef.current
+    if (!el) return
+    const pos = el.selectionStart ?? value.length
+    const before = value.slice(0, pos)
+    const match = before.match(/:([a-z0-9_+-]{1,24})$/i)
+    if (!match) return insertEmoji(emoji)
+    const start = pos - match[0].length
+    const nextValue = value.slice(0, start) + emoji + ' ' + value.slice(pos)
+    setValue(nextValue)
+    setEmojiQuery('')
+    requestAnimationFrame(() => {
+      const cursor = start + emoji.length + 1
+      el.focus()
+      el.setSelectionRange(cursor, cursor)
+      resize()
+    })
+  }
+
   const submit = () => {
-    const text = value.trim()
+    let text = value.trim()
     if (!text && !pendingFile) return
     if (disabled) return
+
+    if (text.startsWith('/')) {
+      const [cmdRaw, ...rest] = text.slice(1).split(/\s+/)
+      const cmd = cmdRaw.toLowerCase()
+      const arg = rest.join(' ').trim()
+      if (cmd === 'clear') {
+        setValue('')
+        setPendingFile(null)
+        reset()
+        return
+      }
+      if (cmd === 'shrug') text = `${arg ? `${arg} ` : ''}¯\\_(ツ)_/¯`
+      if (cmd === 'me') text = arg ? `• ${me || 'คุณ'} ${arg}` : `• ${me || 'คุณ'}`
+      if (cmd === 'gif') text = arg ? `https://giphy.com/search/${encodeURIComponent(arg)}` : 'https://giphy.com/explore/reaction'
+      if (cmd === 'pin' && replyTo?.dbId && onPinCommand) {
+        onPinCommand(replyTo.dbId)
+        setValue('')
+        onCancelReply()
+        return
+      }
+    }
+
     onSend(text, pendingFile ?? undefined, replyTo?.dbId)
     setValue('')
     setPendingFile(null)
@@ -202,6 +284,22 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         />
       )}
 
+      {emojiQuery && (
+        <div className="mb-2 glass rounded-2xl p-1.5 flex flex-wrap gap-1 animate-slideup">
+          {NAMED_EMOJIS.filter((item) => item.name.includes(emojiQuery)).slice(0, 6).map((item) => (
+            <button
+              key={item.char}
+              type="button"
+              onClick={() => applyEmojiToken(item.char)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-xl text-[11px] text-white/70 hover:bg-white/10 transition"
+            >
+              <img src={emojiUrl(item.char)} alt={item.char} width={18} height={18} loading="lazy" />
+              <span>{item.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="glass-soft rounded-2xl flex items-end gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 focus-within:ring-2 focus-within:ring-white/15 transition">
         <button
           type="button"
@@ -227,9 +325,24 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
           rows={1}
           value={value}
           disabled={disabled}
-          onChange={(e) => { setValue(e.target.value); onTyping() }}
+          onChange={(e) => {
+            const next = e.target.value
+            setValue(next)
+            onTyping()
+            const pos = e.target.selectionStart ?? next.length
+            const match = next.slice(0, pos).match(/:([a-z0-9_+-]{1,24})$/i)
+            setEmojiQuery(match?.[1].toLowerCase() ?? '')
+          }}
           onPaste={onPaste}
           onKeyDown={(e) => {
+            const suggestions = emojiQuery
+              ? NAMED_EMOJIS.filter((item) => item.name.includes(emojiQuery)).slice(0, 6)
+              : []
+            if ((e.key === 'Tab' || e.key === 'Enter') && suggestions.length > 0 && emojiQuery) {
+              e.preventDefault()
+              applyEmojiToken(suggestions[0].char)
+              return
+            }
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
           }}
           placeholder={placeholder ?? 'พิมพ์ข้อความ'}

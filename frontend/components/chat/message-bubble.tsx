@@ -248,7 +248,7 @@ function MessageBubbleBase({ line, grouped, me, onReply, onReact, onPin, isPinne
         : 'max-w-[85%] sm:max-w-[75%] md:max-w-[65%]'} flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
         {showMeta && (
           <div className={`text-[11px] mb-1 px-1 ${mine ? 'text-white/40' : 'text-white/55'}`}>
-            {mine ? 'คุณ' : line.username} · {formatTime(line.timestamp)}
+            {mine ? 'คุณ' : line.username} · {line.queued ? 'รอส่ง' : formatTime(line.timestamp)}
           </div>
         )}
 

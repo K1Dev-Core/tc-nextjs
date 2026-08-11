@@ -6,9 +6,18 @@ import { WS_URL, API_BASE } from './room'
 import { sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
 import { normalizeFileMeta } from './file-utils'
+import { cacheLines, getCachedLines } from './client-cache'
 
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
+const QUEUE_KEY_PREFIX = 'aura:send-queue:'
+
+interface PendingMessage {
+  id: string
+  channel: string
+  payload: { type: 'message' | 'reply'; content: string; file?: FileMeta; replyTo?: number }
+  line: LineMessage
+}
 
 let idCounter = 0
 const nextId = () => `${Date.now()}-${idCounter++}`
@@ -45,6 +54,7 @@ export function useChat(username: string | null) {
   const [loadingChannels, setLoadingChannels] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(true)
   const [loadingPins, setLoadingPins] = useState(true)
+  const [queuedCount, setQueuedCount] = useState(0)
 
   const wsRef = useRef<WebSocket | null>(null)
   const usernameRef = useRef(username)
@@ -52,6 +62,44 @@ export function useChat(username: string | null) {
   const channelRef = useRef('')
   const lastTypingSent = useRef(0)
   const oldestDbId = useRef<number | null>(null)
+  const queueRef = useRef<PendingMessage[]>([])
+
+  const persistQueue = useCallback((queue = queueRef.current) => {
+    if (typeof window === 'undefined' || !usernameRef.current) return
+    try { localStorage.setItem(`${QUEUE_KEY_PREFIX}${usernameRef.current}`, JSON.stringify(queue)) } catch { void 0 }
+    setQueuedCount(queue.length)
+  }, [])
+
+  const loadQueue = useCallback((name: string) => {
+    if (typeof window === 'undefined') return [] as PendingMessage[]
+    try {
+      const raw = localStorage.getItem(`${QUEUE_KEY_PREFIX}${name}`)
+      return raw ? (JSON.parse(raw) as PendingMessage[]) : []
+    } catch {
+      return [] as PendingMessage[]
+    }
+  }, [])
+
+  const flushQueue = useCallback(() => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    const currentChannel = channelRef.current || 'นกพิราบ'
+    const remaining: PendingMessage[] = []
+    const sentIds = new Set<string>()
+    for (const item of queueRef.current) {
+      if (item.channel !== currentChannel) {
+        remaining.push(item)
+        continue
+      }
+      ws.send(JSON.stringify(item.payload))
+      sentIds.add(item.line.id)
+    }
+    if (sentIds.size > 0) {
+      setLines((prev) => prev.filter((line) => !sentIds.has(line.id)))
+    }
+    queueRef.current = remaining
+    persistQueue(remaining)
+  }, [persistQueue])
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -79,6 +127,8 @@ export function useChat(username: string | null) {
     setLoadingChannels(true)
     setLoadingMessages(true)
     setLoadingPins(true)
+    queueRef.current = loadQueue(username)
+    setQueuedCount(queueRef.current.length)
     let stopped = false
     let retry = 0
     let reconnectTimer: ReturnType<typeof setTimeout>
@@ -90,8 +140,14 @@ export function useChat(username: string | null) {
           if (m.channels) setChannels(m.channels)
           setLoadingChannels(false)
           if (!channelRef.current && m.channels && m.channels.length > 0) {
-            channelRef.current = m.channels[0].name
-            setActiveChannel(m.channels[0].name)
+            const initialChannel = m.channels[0].name
+            channelRef.current = initialChannel
+            setActiveChannel(initialChannel)
+            getCachedLines(initialChannel).then((cached) => {
+              if (stopped || channelRef.current !== initialChannel || cached.length === 0) return
+              setLines(cached)
+              setLoadingMessages(false)
+            })
           }
           break
         }
@@ -104,6 +160,7 @@ export function useChat(username: string | null) {
           const mapped = m.history.map((h) => toLine(h, me))
           setLines(mapped)
           setTyping({})
+          if (m.channel) cacheLines(m.channel, mapped)
           if (m.pins) setPinnedMessages(m.pins.map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
           setLoadingPins(false)
           if (mapped.length > 0) {
@@ -121,7 +178,11 @@ export function useChat(username: string | null) {
         }
         case 'message': {
           if (!m.content && !m.file) return
-          setLines((prev) => [...prev, toLine(m, me)])
+          setLines((prev) => {
+            const next = [...prev, toLine(m, me)]
+            cacheLines(channelRef.current, next)
+            return next
+          })
           if (m.username !== me) sfx.receive()
           setTyping((prev) => {
             if (!prev[m.username]) return prev
@@ -197,6 +258,7 @@ export function useChat(username: string | null) {
         retry = 0
         setStatus('open')
         fetchChannels()
+        flushQueue()
       }
       ws.onmessage = (ev) => {
         let m: ChatMessage
@@ -226,20 +288,44 @@ export function useChat(username: string | null) {
       wsRef.current?.close()
       wsRef.current = null
     }
-  }, [username])
+  }, [username, loadQueue, flushQueue])
 
   const send = useCallback((content: string, file?: FileMeta, replyTo?: number) => {
-    const ws = wsRef.current
-    if (!ws || ws.readyState !== WebSocket.OPEN) return
     const text = content.trim()
     if (!text && !file) return
-    if (replyTo) {
-      ws.send(JSON.stringify({ type: 'reply', content: text, file, replyTo }))
-    } else {
-      ws.send(JSON.stringify({ type: 'message', content: text, file }))
+    const ws = wsRef.current
+    const payload: PendingMessage['payload'] = replyTo
+      ? { type: 'reply', content: text, file, replyTo }
+      : { type: 'message', content: text, file }
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload))
+      sfx.send()
+      return
     }
+
+    const queuedLine: LineMessage = {
+      id: `queued-${nextId()}`,
+      type: 'message',
+      username: usernameRef.current ?? '',
+      content: text,
+      file,
+      timestamp: new Date().toISOString(),
+      mine: true,
+      replyTo,
+      queued: true,
+    }
+    const item: PendingMessage = {
+      id: queuedLine.id,
+      channel: channelRef.current || 'นกพิราบ',
+      payload,
+      line: queuedLine,
+    }
+    queueRef.current = [...queueRef.current, item]
+    persistQueue()
+    setLines((prev) => [...prev, queuedLine])
     sfx.send()
-  }, [])
+  }, [persistQueue])
 
   const sendTyping = useCallback(() => {
     const ws = wsRef.current
@@ -308,8 +394,14 @@ export function useChat(username: string | null) {
     setPinnedMessages([])
     channelRef.current = name
     setActiveChannel(name)
+    getCachedLines(name).then((cached) => {
+      if (channelRef.current !== name || cached.length === 0) return
+      setLines(cached)
+      setLoadingMessages(false)
+    })
     ws.send(JSON.stringify({ type: 'channel_switch', content: name }))
-  }, [])
+    flushQueue()
+  }, [flushQueue])
 
   const createChannel = useCallback((name: string) => {
     const ws = wsRef.current
@@ -331,7 +423,11 @@ export function useChat(username: string | null) {
         return
       }
       const mapped = older.map((h) => toLine(h, me))
-      setLines((prev) => [...mapped, ...prev])
+      setLines((prev) => {
+        const next = [...mapped, ...prev]
+        cacheLines(channelRef.current, next)
+        return next
+      })
       oldestDbId.current = mapped[0]?.dbId ?? oldestDbId.current
       setHasMore(older.length >= 50)
     } catch {
@@ -347,5 +443,6 @@ export function useChat(username: string | null) {
     channels, activeChannel, switchChannel, createChannel,
     pinnedMessages, loadPinnedMessages,
     loadingChannels, loadingMessages, loadingPins,
+    queuedCount,
   }
 }
