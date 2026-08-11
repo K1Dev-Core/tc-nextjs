@@ -2,17 +2,23 @@
 
 import { useEffect, useRef, useState, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
-import { SendIcon, PaperclipIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
+import { SendIcon, PaperclipIcon, CloseIcon, EmojiIcon, ImageIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
 import { fileUrl, formatBytes } from '@/lib/file-utils'
 import { QUICK_EMOJIS, EMOJI_MAP, emojiUrl } from '@/lib/emoji'
 import type { FileMeta, LineMessage } from '@/lib/types'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
 import { AudioPlayer } from './audio-player'
+import type { MemeTemplate } from '@/lib/memes'
 
 
 const EmojiPickerModal = dynamic(
   () => import('./emoji-picker-modal').then((mod) => mod.EmojiPickerModal),
+  { ssr: false },
+)
+
+const MemePickerModal = dynamic(
+  () => import('./meme-picker-modal').then((mod) => mod.MemePickerModal),
   { ssr: false },
 )
 
@@ -102,6 +108,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
   const [uploadPreview, setUploadPreview] = useState<UploadPreviewState | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [showMeme, setShowMeme] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skipDraftSave = useRef(false)
@@ -273,6 +280,20 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
     })
   }
 
+  const sendMeme = (meme: MemeTemplate) => {
+    if (disabled || loading) return
+    onSend('', {
+      url: meme.url,
+      name: `${meme.name}.jpg`,
+      type: meme.url.endsWith('.png') ? 'image/png' : 'image/jpeg',
+      size: 0,
+    })
+    setValue('')
+    clearAttachment()
+    onCancelReply()
+    requestAnimationFrame(() => { taRef.current?.focus(); resize() })
+  }
+
   const submit = () => {
     let text = value.trim()
     if (!text && !pendingFile) return
@@ -357,6 +378,13 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         />
       )}
 
+      {showMeme && (
+        <MemePickerModal
+          onPick={sendMeme}
+          onClose={() => setShowMeme(false)}
+        />
+      )}
+
       {emojiQuery && (
         <div className="mb-2 glass rounded-2xl p-1.5 flex flex-wrap gap-1 animate-slideup">
           {NAMED_EMOJIS.filter((item) => item.name.includes(emojiQuery)).slice(0, 6).map((item) => (
@@ -392,6 +420,16 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
           aria-label="อิโมจิ"
         >
           <EmojiIcon className="w-5 h-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowMeme(true)}
+          disabled={disabled || loading}
+          className="grid place-items-center w-9 h-9 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
+          aria-label="มีม"
+          title="มีม"
+        >
+          <ImageIcon className="w-5 h-5" />
         </button>
         <textarea
           ref={taRef}
@@ -433,7 +471,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
       </div>
       <div className="mt-1.5 px-1 text-[10px] text-white/25 hidden sm:flex items-center justify-between">
         <span>Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัด</span>
-        <span>ลากไฟล์มาวาง หรือ Ctrl+V เพื่อวาง · สูงสุด 50MB</span>
+        <span>ลากไฟล์ / Ctrl+V / มีม ส่งรูปทันที · สูงสุด 50MB</span>
       </div>
     </div>
   )
