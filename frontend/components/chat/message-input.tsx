@@ -282,10 +282,12 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
 
   const sendMeme = (meme: MemeTemplate) => {
     if (disabled || loading) return
+    const isGif = meme.animated || /\.gif(\?|$)/i.test(meme.url)
+    const isPng = /\.png(\?|$)/i.test(meme.url)
     onSend('', {
       url: meme.url,
-      name: `${meme.name}.jpg`,
-      type: meme.url.endsWith('.png') ? 'image/png' : 'image/jpeg',
+      name: `${meme.name}.${isGif ? 'gif' : isPng ? 'png' : 'jpg'}`,
+      type: isGif ? 'image/gif' : isPng ? 'image/png' : 'image/jpeg',
       size: 0,
     })
     setValue('')
