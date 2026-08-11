@@ -34,7 +34,7 @@ export function fileUrl(url?: string | null): string {
   const value = asString(url).trim()
   if (!value) return ''
   if (/^https?:\/\//i.test(value)) return value
-  const base = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'
+  const base = process.env.NEXT_PUBLIC_API_BASE || '/api/backend'
   const path = value.startsWith('/') ? value : `/${value}`
   return `${base}${path}`
 }

@@ -59,7 +59,7 @@ export function LinkPreview({ url }: { url: string }) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
 
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8080'}/preview?url=${encodeURIComponent(url)}`, { signal: controller.signal })
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE ?? '/api/backend'}/preview?url=${encodeURIComponent(url)}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((d: PreviewData) => {
         if (cancelled) return
