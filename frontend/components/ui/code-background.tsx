@@ -80,10 +80,10 @@ async def neon_pulse() -> None:
         print("upload pipeline alive ::", secrets.token_hex(4))`
 
 const COLUMNS = [
-  { side: 'left-0', width: 'w-[34rem]', opacity: 'opacity-[0.18]', speed: '34s', drift: 'code-drift-a' },
-  { side: 'left-[18%]', width: 'w-[28rem]', opacity: 'opacity-[0.10]', speed: '42s', drift: 'code-drift-b' },
-  { side: 'right-[16%]', width: 'w-[30rem]', opacity: 'opacity-[0.12]', speed: '38s', drift: 'code-drift-c' },
-  { side: 'right-0', width: 'w-[36rem]', opacity: 'opacity-[0.16]', speed: '46s', drift: 'code-drift-d' },
+  { side: 'left-0', width: 'w-[34rem]', opacity: 'opacity-[0.18]', speed: '34s', drift: 'code-drift-a', mobile: true },
+  { side: 'left-[18%]', width: 'w-[28rem]', opacity: 'opacity-[0.10]', speed: '42s', drift: 'code-drift-b', mobile: false },
+  { side: 'right-[16%]', width: 'w-[30rem]', opacity: 'opacity-[0.12]', speed: '38s', drift: 'code-drift-c', mobile: false },
+  { side: 'right-0', width: 'w-[36rem]', opacity: 'opacity-[0.16]', speed: '46s', drift: 'code-drift-d', mobile: true },
 ]
 
 export function CodeBackground() {
@@ -96,14 +96,13 @@ export function CodeBackground() {
       {COLUMNS.map((column, index) => (
         <div
           key={index}
-          className={`absolute top-[-35%] h-[170%] ${column.side} ${column.width} ${column.opacity} ${column.drift}`}
+          className={`absolute top-[-35%] h-[170%] ${column.side} ${column.width} ${column.opacity} ${column.drift} ${column.mobile ? '' : 'hidden md:block'}`}
           style={{ animationDuration: column.speed }}
         >
           <div
             className="font-mono text-[10px] sm:text-xs leading-5 text-cyan-100/90 drop-shadow-[0_0_10px_rgba(56,189,248,0.35)] animate-code-rain"
             style={{ animationDuration: column.speed, animationDirection: index % 2 ? 'reverse' : 'normal' }}
           >
-            <pre className="m-0 whitespace-pre-wrap">{PYTHON_CODE}</pre>
             <pre className="m-0 whitespace-pre-wrap">{PYTHON_CODE}</pre>
             <pre className="m-0 whitespace-pre-wrap">{PYTHON_CODE}</pre>
           </div>

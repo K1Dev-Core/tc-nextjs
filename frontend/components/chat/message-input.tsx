@@ -1,12 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { SendIcon, PaperclipIcon, SpinnerIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
 import { fileUrl, formatBytes, isImage } from '@/lib/file-utils'
 import type { FileMeta, LineMessage } from '@/lib/types'
-import { EmojiPickerModal } from './emoji-picker-modal'
 import { codeFence, detectPastedCode } from '@/lib/code-paste'
+
+
+const EmojiPickerModal = dynamic(
+  () => import('./emoji-picker-modal').then((mod) => mod.EmojiPickerModal),
+  { ssr: false },
+)
 
 interface MessageInputProps {
   onSend: (content: string, file?: FileMeta, replyTo?: number) => void

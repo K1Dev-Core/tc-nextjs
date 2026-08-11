@@ -4,6 +4,7 @@
 
 @import 'highlight.js/styles/github-dark.css';
 
+
 :root {
   color-scheme: dark;
 }
@@ -44,24 +45,6 @@ body {
   }
 }
 
-/* Scrolling code background — moves code text upward, loops seamlessly */
-@keyframes scroll-code {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
-}
-
-/* Reverse scroll (right column moves downward) */
-@keyframes scroll-code-rev {
-  0% { transform: translateY(-50%); }
-  100% { transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bg-aurora,
-  [style*='scroll-code'] {
-    animation: none !important;
-  }
-}
 
 
 @keyframes code-rain {
@@ -118,6 +101,35 @@ body {
 .code-drift-b { animation-name: code-drift-b; }
 .code-drift-c { animation-name: code-drift-c; }
 .code-drift-d { animation-name: code-drift-d; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-aurora,
+  .animate-code-rain,
+  .animate-code-grid,
+  .code-drift-a,
+  .code-drift-b,
+  .code-drift-c,
+  .code-drift-d,
+  .skeleton,
+  .animate-scalein,
+  .animate-slideup,
+  .animate-slidein,
+  .animate-fadein {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .animate-code-grid {
+    animation-duration: 30s;
+  }
+
+  .code-drift-a,
+  .code-drift-d {
+    opacity: 0.08;
+  }
+}
 
 @keyframes shimmer-skeleton {
   0% { background-position: -200% 0; }

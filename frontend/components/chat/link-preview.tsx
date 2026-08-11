@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { LinkPreviewSkeleton } from '@/components/ui/skeleton'
 
 interface PreviewData {
@@ -11,14 +11,50 @@ interface PreviewData {
   siteName?: string
 }
 
-// ponytail: module-level cache, unbounded (previews are small objects)
+const MAX_PREVIEW_CACHE = 300
 const previewCache = new Map<string, PreviewData | null>()
 
+function cachePreview(url: string, preview: PreviewData | null): void {
+  if (previewCache.size >= MAX_PREVIEW_CACHE && !previewCache.has(url)) {
+    const first = previewCache.keys().next().value
+    if (first) previewCache.delete(first)
+  }
+  previewCache.set(url, preview)
+}
+
 export function LinkPreview({ url }: { url: string }) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(() => previewCache.has(url))
   const [data, setData] = useState<PreviewData | null | undefined>(() => previewCache.get(url))
 
   useEffect(() => {
-    if (data !== undefined) return
+    setData(previewCache.get(url))
+    setVisible(previewCache.has(url))
+  }, [url])
+
+  useEffect(() => {
+    if (visible) return
+    const node = rootRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setVisible(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setVisible(true)
+        observer.disconnect()
+      },
+      { rootMargin: '360px 0px' },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [visible])
+
+  useEffect(() => {
+    if (!visible || data !== undefined) return
     let cancelled = false
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
@@ -28,20 +64,22 @@ export function LinkPreview({ url }: { url: string }) {
       .then((d: PreviewData) => {
         if (cancelled) return
         const preview = d.title || d.image ? d : null
-        previewCache.set(url, preview)
+        cachePreview(url, preview)
         setData(preview)
       })
       .catch(() => {
         if (cancelled) return
-        previewCache.set(url, null)
+        cachePreview(url, null)
         setData(null)
       })
       .finally(() => clearTimeout(timeout))
 
     return () => { cancelled = true; clearTimeout(timeout); controller.abort() }
-  }, [url, data])
+  }, [url, data, visible])
 
-  if (data === undefined) return <LinkPreviewSkeleton />
+  if (data === undefined) {
+    return <div ref={rootRef}><LinkPreviewSkeleton /></div>
+  }
   if (!data || (!data.title && !data.image)) return null
 
   const domain = (() => {

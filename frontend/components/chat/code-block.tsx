@@ -1,39 +1,60 @@
 'use client'
 
 import { memo, useEffect, useRef, useState, useCallback } from 'react'
-import hljs from 'highlight.js/lib/common'
+import type { HLJSApi } from 'highlight.js'
 
 interface CodeBlockProps {
   code: string
   lang?: string
 }
 
-function detectLang(code: string): string {
-  if (!code.trim()) return 'plaintext'
-  try {
-    const result = hljs.highlightAuto(code)
-    return result.language || 'plaintext'
-  } catch {
-    return 'plaintext'
-  }
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;')
+
+let highlighterPromise: Promise<HLJSApi> | null = null
+
+function loadHighlighter(): Promise<HLJSApi> {
+  highlighterPromise ??= import('highlight.js/lib/common').then((mod) => mod.default)
+  return highlighterPromise
+}
+
+function safeLanguage(hljs: HLJSApi, language: string): string {
+  return hljs.getLanguage(language) ? language : 'plaintext'
 }
 
 function CodeBlockBase({ code, lang }: CodeBlockProps) {
   const codeRef = useRef<HTMLElement>(null)
   const [copied, setCopied] = useState(false)
-  const language = lang || detectLang(code)
+  const [language, setLanguage] = useState(lang || 'plaintext')
 
   useEffect(() => {
-    if (codeRef.current) {
-      try {
-        const lang = detectLang(code)
-        const result = hljs.highlight(code, { language: lang, ignoreIllegals: true })
-        codeRef.current.innerHTML = result.value
-      } catch {
-        if (codeRef.current) codeRef.current.textContent = code
-      }
-    }
-  }, [code])
+    let active = true
+    const target = codeRef.current
+    if (target) target.innerHTML = escapeHtml(code)
+
+    loadHighlighter()
+      .then((hljs) => {
+        if (!active) return
+        const detected = lang
+          ? safeLanguage(hljs, lang)
+          : (code.trim() ? hljs.highlightAuto(code).language || 'plaintext' : 'plaintext')
+        const safeLang = safeLanguage(hljs, detected)
+        const result = safeLang === 'plaintext'
+          ? { value: escapeHtml(code) }
+          : hljs.highlight(code, { language: safeLang, ignoreIllegals: true })
+        if (codeRef.current) codeRef.current.innerHTML = result.value
+        setLanguage(safeLang)
+      })
+      .catch(() => {
+        if (active && codeRef.current) codeRef.current.textContent = code
+      })
+
+    return () => { active = false }
+  }, [code, lang])
 
   const copy = useCallback(async () => {
     try {
