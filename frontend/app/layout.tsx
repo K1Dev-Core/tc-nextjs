@@ -17,6 +17,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className="dark">
+      <head>
+        <link rel="dns-prefetch" href="https://print-code.k1god.com" />
+        <link rel="preconnect" href="https://print-code.k1god.com" crossOrigin="anonymous" />
+      </head>
       <body className="bg-aurora">
         <CodeBackground />
         {children}

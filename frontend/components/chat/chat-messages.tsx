@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
 import type { LineMessage } from '@/lib/types'
 import { MessageBubble } from './message-bubble'
 import { TypingIndicator } from './typing-indicator'
@@ -22,6 +22,32 @@ interface ChatMessagesProps {
   scrollTrigger: string
   loading?: boolean
 }
+
+interface MessageRowProps {
+  line: LineMessage
+  grouped: boolean
+  isPinned: boolean
+  me: string
+  onReply: (line: LineMessage) => void
+  onReact: (messageId: number, emoji: string) => void
+  onPin: (messageId: number) => void
+}
+
+const MessageRow = memo(function MessageRow({ line, grouped, isPinned, me, onReply, onReact, onPin }: MessageRowProps) {
+  return (
+    <div className="message-row">
+      <MessageBubble line={line} grouped={grouped} me={me} onReply={onReply} onReact={onReact} onPin={onPin} isPinned={isPinned} />
+    </div>
+  )
+}, (prev, next) => (
+  prev.line === next.line &&
+  prev.grouped === next.grouped &&
+  prev.isPinned === next.isPinned &&
+  prev.me === next.me &&
+  prev.onReply === next.onReply &&
+  prev.onReact === next.onReact &&
+  prev.onPin === next.onPin
+))
 
 export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onLoadMore, onReply, onReact, onPin, pinnedIds, scrollTrigger, loading = false }: ChatMessagesProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -192,9 +218,16 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
       )}
 
       {rows.map(({ line, grouped, isPinned }) => (
-        <div key={line.id} className="message-row">
-          <MessageBubble line={line} grouped={grouped} me={me ?? ''} onReply={onReply} onReact={onReact} onPin={onPin} isPinned={isPinned} />
-        </div>
+        <MessageRow
+          key={line.id}
+          line={line}
+          grouped={grouped}
+          isPinned={isPinned}
+          me={me ?? ''}
+          onReply={onReply}
+          onReact={onReact}
+          onPin={onPin}
+        />
       ))}
 
       <TypingIndicator names={typingUsers} />

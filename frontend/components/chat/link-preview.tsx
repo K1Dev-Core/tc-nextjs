@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { LinkPreviewSkeleton } from '@/components/ui/skeleton'
 
 interface PreviewData {
@@ -24,6 +24,7 @@ function cachePreview(url: string, preview: PreviewData | null): void {
 
 export function LinkPreview({ url }: { url: string }) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const [, startTransition] = useTransition()
   const [visible, setVisible] = useState(() => previewCache.has(url))
   const [data, setData] = useState<PreviewData | null | undefined>(() => previewCache.get(url))
 
@@ -65,17 +66,21 @@ export function LinkPreview({ url }: { url: string }) {
         if (cancelled) return
         const preview = d.title || d.image ? d : null
         cachePreview(url, preview)
-        setData(preview)
+        startTransition(() => setData(preview))
       })
       .catch(() => {
         if (cancelled) return
         cachePreview(url, null)
-        setData(null)
+        startTransition(() => setData(null))
       })
       .finally(() => clearTimeout(timeout))
 
     return () => { cancelled = true; clearTimeout(timeout); controller.abort() }
-  }, [url, data, visible])
+  }, [url, data, visible, startTransition])
+
+  if (!visible && data === undefined) {
+    return <div ref={rootRef} className="h-px w-full" />
+  }
 
   if (data === undefined) {
     return <div ref={rootRef}><LinkPreviewSkeleton /></div>
@@ -101,6 +106,7 @@ export function LinkPreview({ url }: { url: string }) {
             alt={data.title ?? ''}
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
             onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }}
           />
         </div>

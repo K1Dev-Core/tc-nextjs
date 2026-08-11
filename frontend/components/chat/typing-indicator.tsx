@@ -1,6 +1,8 @@
 'use client'
 
-export function TypingIndicator({ names }: { names: string[] }) {
+import { memo } from 'react'
+
+function TypingIndicatorBase({ names }: { names: string[] }) {
   if (names.length === 0) return null
   return (
     <div className="flex items-center gap-2 px-1 py-1.5 animate-fadein">
@@ -19,3 +21,5 @@ export function TypingIndicator({ names }: { names: string[] }) {
     </div>
   )
 }
+
+export const TypingIndicator = memo(TypingIndicatorBase, (prev, next) => prev.names.join('\0') === next.names.join('\0'))

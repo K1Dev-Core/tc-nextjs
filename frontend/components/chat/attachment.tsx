@@ -29,7 +29,8 @@ function ImageAttachment({ file, onOpen, lightbox, onClose }: { file: FileMeta; 
           src={fileUrl(file.url)}
           alt={file.name}
           loading="lazy"
-          className="max-w-full max-h-[240px] object-cover transition group-hover:opacity-90"
+          decoding="async"
+          className="block max-w-full max-h-[240px] object-cover transition group-hover:opacity-90"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-end p-2 opacity-0 group-hover:opacity-100">
           <span className="text-[10px] text-white/90 truncate">{file.name}</span>
@@ -70,6 +71,7 @@ export function Lightbox({ file, onClose }: { file: FileMeta; onClose: () => voi
       <img
         src={fileUrl(file.url)}
         alt={file.name}
+        decoding="async"
         onClick={(e) => e.stopPropagation()}
         className="max-w-[92vw] max-h-[78vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
       />
@@ -98,6 +100,7 @@ function VideoAttachment({ file }: { file: FileMeta }) {
     <video
       src={fileUrl(file.url)}
       controls
+      preload="metadata"
       className="mt-1.5 rounded-xl max-w-[320px] max-h-[240px]"
     />
   )
@@ -110,7 +113,7 @@ function AudioAttachment({ file }: { file: FileMeta }) {
         <span className="truncate">{file.name}</span>
         <span className="text-white/30 text-xs shrink-0">{formatBytes(file.size)}</span>
       </div>
-      <audio src={fileUrl(file.url)} controls className="w-full" />
+      <audio src={fileUrl(file.url)} controls preload="metadata" className="w-full" />
     </div>
   )
 }
