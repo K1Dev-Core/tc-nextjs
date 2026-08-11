@@ -3,6 +3,8 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { CloseIcon } from '@/components/ui/icons'
 import { REMOTE_SFX, SFX_COOLDOWN_MS, type RemoteSfxItem } from '@/lib/remote-sfx'
+
+const SFX_COOLDOWN_KEY = 'aura:sfx-cooldown-until'
 import { isSoundEnabled, preloadRemoteSfx, SOUND_CHANGE_EVENT } from '@/lib/sounds'
 
 interface SfxPickerModalProps {
@@ -12,7 +14,11 @@ interface SfxPickerModalProps {
 
 function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
-  const [cooldownUntil, setCooldownUntil] = useState(0)
+  const [cooldownUntil, setCooldownUntil] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    const saved = Number(localStorage.getItem(SFX_COOLDOWN_KEY) ?? '0')
+    return Number.isFinite(saved) ? saved : 0
+  })
   const [now, setNow] = useState(() => Date.now())
   const cooldownLeft = Math.max(0, cooldownUntil - now)
   const locked = !soundOn || cooldownLeft > 0
@@ -23,9 +29,14 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
   }, [])
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 150)
+    const t = setInterval(() => setNow(Date.now()), 250)
     return () => clearInterval(t)
   }, [])
+
+  useEffect(() => {
+    if (cooldownUntil > Date.now()) return
+    try { localStorage.removeItem(SFX_COOLDOWN_KEY) } catch {}
+  }, [cooldownUntil, cooldownLeft])
 
   useEffect(() => {
     const handler = (e: Event) => setSoundOn(Boolean((e as CustomEvent<boolean>).detail))
@@ -47,6 +58,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
     const next = Date.now() + SFX_COOLDOWN_MS
     setNow(Date.now())
     setCooldownUntil(next)
+    try { localStorage.setItem(SFX_COOLDOWN_KEY, String(next)) } catch {}
   }
 
   return (
@@ -60,7 +72,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
           <div>
             <div className="text-[14px] font-semibold">SFX Meme</div>
             <div className="text-[10px] text-white/35">
-              {!soundOn ? 'ปิดเสียงอยู่ · เปิดเสียงก่อนถึงกดได้' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : 'เสียงอยู่ใน frontend แล้ว · กดแล้วดังทั้งห้อง'}
+              {!soundOn ? 'ปิดเสียงอยู่ · เปิดเสียงก่อนถึงกดได้' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : 'พร้อมเล่น · คูลดาวน์ 1 นาที'}
             </div>
           </div>
           <button
@@ -91,7 +103,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] text-white/85 font-medium">{item.name}</span>
-                  <span className="block truncate text-[10px] text-white/32">กดเล่น · ไม่ค้าง history</span>
+                  <span className="block truncate text-[10px] text-white/32">คูลดาวน์ 1 นาที</span>
                 </span>
               </button>
             ))}

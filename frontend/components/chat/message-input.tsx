@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, memo } from 'react'
 import dynamic from 'next/dynamic'
-import { SendIcon, PaperclipIcon, CloseIcon, EmojiIcon, ImageIcon } from '@/components/ui/icons'
+import { SendIcon, PaperclipIcon, CloseIcon, EmojiIcon } from '@/components/ui/icons'
 import { useUpload } from '@/lib/use-upload'
 import { isSoundEnabled, SOUND_CHANGE_EVENT } from '@/lib/sounds'
 import { fileUrl, formatBytes } from '@/lib/file-utils'
@@ -438,16 +438,6 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
         </button>
         <button
           type="button"
-          onClick={() => setPickerTab('meme')}
-          disabled={disabled || loading}
-          className="grid place-items-center w-9 h-9 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
-          aria-label="มีม"
-          title="มีม"
-        >
-          <ImageIcon className="w-5 h-5" />
-        </button>
-        <button
-          type="button"
           onClick={() => setShowSfx(true)}
           disabled={disabled || loading || !soundOn || !onSfx}
           className="grid place-items-center w-9 h-9 rounded-xl text-[10px] font-black tracking-tight text-white/45 hover:text-white/80 hover:bg-white/5 transition shrink-0 disabled:opacity-30"
@@ -496,7 +486,7 @@ export function MessageInput({ onSend, onTyping, disabled, placeholder, replyTo,
       </div>
       <div className="mt-1.5 px-1 text-[10px] text-white/25 hidden sm:flex items-center justify-between">
         <span>Enter เพื่อส่ง · Shift+Enter ขึ้นบรรทัด</span>
-        <span>ลากไฟล์ / Ctrl+V / มีม / SFX · สูงสุด 50MB</span>
+        <span>ลากไฟล์ / Ctrl+V / อิโมจิ+มีม / SFX · สูงสุด 50MB</span>
       </div>
     </div>
   )

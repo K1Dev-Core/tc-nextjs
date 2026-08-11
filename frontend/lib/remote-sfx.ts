@@ -7,7 +7,7 @@ export interface RemoteSfxItem {
   source: string
 }
 
-export const SFX_COOLDOWN_MS = 3500
+export const SFX_COOLDOWN_MS = 60_000
 
 export const REMOTE_SFX: RemoteSfxItem[] = [
   {

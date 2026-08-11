@@ -13,7 +13,7 @@ import {
 } from '../db/queries.js'
 
 const MAX_CONTENT = 4000
-const SFX_COOLDOWN_MS = 3500
+const SFX_COOLDOWN_MS = 60_000
 const SFX_URL_PREFIX = '/sfx/'
 
 export function handleConnection(ws: WebSocket, username: string, channelName: string): void {
