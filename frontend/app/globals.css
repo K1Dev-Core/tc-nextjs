@@ -160,6 +160,44 @@ body {
   animation: slideup 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+
+.message-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 72px;
+}
+
+body[data-chat-scrolling='1'] .animate-code-rain,
+body[data-chat-scrolling='1'] .animate-code-grid,
+body[data-chat-scrolling='1'] .code-drift-a,
+body[data-chat-scrolling='1'] .code-drift-b,
+body[data-chat-scrolling='1'] .code-drift-c,
+body[data-chat-scrolling='1'] .code-drift-d {
+  animation-play-state: paused;
+}
+
+body[data-chat-scrolling='1'] .code-drift-a,
+body[data-chat-scrolling='1'] .code-drift-b,
+body[data-chat-scrolling='1'] .code-drift-c,
+body[data-chat-scrolling='1'] .code-drift-d {
+  opacity: 0.05;
+}
+
+@media (max-width: 640px) {
+  .glass,
+  .glass-soft {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glass {
+    background: rgba(12, 14, 22, 0.76);
+  }
+
+  .glass-soft {
+    background: rgba(255, 255, 255, 0.075);
+  }
+}
+
 /* Frosted glass panel */
 .glass {
   background: rgba(20, 22, 30, 0.55);

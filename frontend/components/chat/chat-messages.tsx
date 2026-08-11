@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
 import type { LineMessage } from '@/lib/types'
 import { MessageBubble } from './message-bubble'
 import { TypingIndicator } from './typing-indicator'
@@ -30,6 +30,7 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
   const atBottom = useRef(true)
   const isFirstLoad = useRef(true)
   const prevChannelRef = useRef(scrollTrigger)
+  const scrollIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current
@@ -37,9 +38,36 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
     el.scrollTo({ top: el.scrollHeight, behavior })
   }, [])
 
+  const rows = useMemo(() => lines.map((line, idx) => {
+    const prev = lines[idx - 1]
+    const grouped = Boolean(
+      prev &&
+      prev.type === 'message' &&
+      line.type === 'message' &&
+      prev.username === line.username &&
+      prev.mine === line.mine &&
+      !line.replyTo,
+    )
+    return {
+      line,
+      grouped,
+      isPinned: line.dbId ? pinnedIds.has(line.dbId) : false,
+    }
+  }), [lines, pinnedIds])
+
+  const markScrollBusy = useCallback(() => {
+    document.body.dataset.chatScrolling = '1'
+    if (scrollIdleTimer.current) clearTimeout(scrollIdleTimer.current)
+    scrollIdleTimer.current = setTimeout(() => {
+      delete document.body.dataset.chatScrolling
+      scrollIdleTimer.current = null
+    }, 220)
+  }, [])
+
   // ponytail: rAF throttle, coalesces scroll events to one per frame
   const rafRef = useRef(0)
   const handleScroll = useCallback(() => {
+    markScrollBusy()
     if (rafRef.current) return
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = 0
@@ -53,7 +81,13 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
         onLoadMore()
       }
     })
-  }, [hasMore, loadingMore, onLoadMore])
+  }, [hasMore, loadingMore, markScrollBusy, onLoadMore])
+
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (scrollIdleTimer.current) clearTimeout(scrollIdleTimer.current)
+    delete document.body.dataset.chatScrolling
+  }, [])
 
   // Channel switch or initial load: force instant jump to bottom
   useEffect(() => {
@@ -127,17 +161,11 @@ export function ChatMessages({ lines, typingUsers, me, hasMore, loadingMore, onL
         </div>
       )}
 
-      {lines.map((line, idx) => {
-        const prev = lines[idx - 1]
-        const grouped =
-          prev &&
-          prev.type === 'message' &&
-          line.type === 'message' &&
-          prev.username === line.username &&
-          prev.mine === line.mine &&
-          !line.replyTo
-        return <MessageBubble key={line.id} line={line} grouped={grouped} me={me ?? ''} onReply={onReply} onReact={onReact} onPin={onPin} isPinned={line.dbId ? pinnedIds.has(line.dbId) : false} />
-      })}
+      {rows.map(({ line, grouped, isPinned }) => (
+        <div key={line.id} className="message-row">
+          <MessageBubble line={line} grouped={grouped} me={me ?? ''} onReply={onReply} onReact={onReact} onPin={onPin} isPinned={isPinned} />
+        </div>
+      ))}
 
       <TypingIndicator names={typingUsers} />
       <div ref={bottomRef} />
