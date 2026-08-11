@@ -215,13 +215,13 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
 
   return (
     <>
-      <div className="hidden lg:flex flex-col h-full w-48 border-r border-white/8 bg-black/30 shrink-0">
+      <div className="channel-sidebar-panel hidden lg:flex flex-col h-full w-48 border-r border-white/8 bg-black/30 shrink-0">
         {sidebarContent}
       </div>
 
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden grid place-items-center w-10 h-10 rounded-xl bg-white/8 border border-white/10 text-white/70 hover:text-white/90 transition shrink-0 absolute top-3 left-3 z-30"
+        className="channel-menu-button lg:hidden grid place-items-center w-10 h-10 rounded-xl bg-white/8 border border-white/10 text-white/70 hover:text-white/90 transition shrink-0 absolute top-3 left-3 z-30"
         aria-label="เมนูห้อง"
       >
         <MenuIcon className="w-5 h-5" />
@@ -230,10 +230,10 @@ function ChannelSidebarBase({ channels, activeChannel, onSelect, onCreate, onlin
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadein"
+            className="channel-sidebar-overlay absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadein"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#1a1c24] border-r border-white/8 flex flex-col animate-slidein">
+          <div className="channel-sidebar-panel absolute left-0 top-0 bottom-0 w-64 bg-[#1a1c24] border-r border-white/8 flex flex-col animate-slidein">
             <div className="flex items-center justify-between px-3 pt-4 pb-2">
               <span className="text-[11px] uppercase tracking-wider text-white/30">ห้อง</span>
               <button
