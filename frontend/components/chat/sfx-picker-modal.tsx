@@ -23,6 +23,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
   const cooldownLeft = Math.max(0, cooldownUntil - now)
   const locked = !soundOn || cooldownLeft > 0
   const cooldownText = useMemo(() => cooldownLeft > 0 ? `${Math.ceil(cooldownLeft / 1000)}s` : '', [cooldownLeft])
+  const statusText = !soundOn ? 'ปิดเสียงอยู่' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : ''
 
   useEffect(() => {
     preloadRemoteSfx(REMOTE_SFX.map((item) => item.url))
@@ -71,9 +72,7 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 shrink-0">
           <div>
             <div className="text-[14px] font-semibold">SFX Meme</div>
-            <div className="text-[10px] text-white/35">
-              {!soundOn ? 'ปิดเสียงอยู่ · เปิดเสียงก่อนถึงกดได้' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : 'พร้อมเล่น · คูลดาวน์ 1 นาที'}
-            </div>
+            {statusText && <div className="text-[10px] text-white/35">{statusText}</div>}
           </div>
           <button
             onClick={onClose}
