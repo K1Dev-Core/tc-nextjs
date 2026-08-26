@@ -7,7 +7,7 @@ export interface RemoteSfxItem {
   source: string
 }
 
-export const SFX_COOLDOWN_MS = 60_000
+export const SFX_COOLDOWN_MS = 20_000
 const SFX_SIGNAL_PREFIX = '\u2063\u2063'
 const SFX_ZERO = '\u200b'
 const SFX_ONE = '\u200c'
