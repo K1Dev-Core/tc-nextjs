@@ -140,10 +140,6 @@ export const REMOTE_SFX: RemoteSfxItem[] = [
     url: '/sfx/victory.mp3',
     source: 'Fortnite / PUBG',
   },
-]
-
-export function findRemoteSfx(id: string) {
-  return REMOTE_SFX.find((item) => item.id === id)
   {
     id: '2-tlktbmuk-2-4985',
     name: '2_ตลกตบมุก_2',
@@ -417,3 +413,7 @@ export function findRemoteSfx(id: string) {
     source: 'myinstants',
   },
 ]
+
+export function findRemoteSfx(id: string) {
+  return REMOTE_SFX.find((item) => item.id === id)
+}
