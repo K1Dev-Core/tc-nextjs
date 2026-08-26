@@ -132,6 +132,14 @@ export const REMOTE_SFX: RemoteSfxItem[] = [
     url: '/sfx/what.mp3',
     source: 'https://www.myinstants.com/en/instant/w-thch-90812/',
   },
+  {
+    id: 'victory',
+    name: 'Victory Royale',
+    emoji: '🏆',
+    color: '#f59e0b',
+    url: '/sfx/victory.mp3',
+    source: 'Fortnite / PUBG',
+  },
 ]
 
 export function findRemoteSfx(id: string) {
