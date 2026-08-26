@@ -10,7 +10,7 @@ import { CommandPalette } from '@/components/chat/command-palette'
 import { FullScreenLoader, PinnedViewSkeleton } from '@/components/ui/skeleton'
 import { useChat } from '@/lib/use-chat'
 import type { ChannelInfo, ChatMessage, LineMessage } from '@/lib/types'
-import { API_BASE } from '@/lib/room'
+import { API_BASE, fetchWithRetry } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
 import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
@@ -100,7 +100,7 @@ export default function Page() {
 
   const fetchGuestChannels = useCallback(() => {
     setGuestLoadingChannels(true)
-    fetch(`${API_BASE}/channels`)
+    fetchWithRetry(`${API_BASE}/channels`)
       .then((r) => r.json())
       .then((d) => {
         if (d.channels?.length) {
@@ -118,7 +118,7 @@ export default function Page() {
       return
     }
     setGuestLoadingMessages(true)
-    fetch(`${API_BASE}/history?channel=${encodeURIComponent(ch)}`)
+    fetchWithRetry(`${API_BASE}/history?channel=${encodeURIComponent(ch)}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.messages) {
@@ -134,7 +134,7 @@ export default function Page() {
     if (!ch) return
     setGuestLoadingPins(true)
     setGuestPins([])
-    fetch(`${API_BASE}/pins/${encodeURIComponent(ch)}`)
+    fetchWithRetry(`${API_BASE}/pins/${encodeURIComponent(ch)}`)
       .then((r) => r.json())
       .then((d) => setGuestPins(d.pins ?? []))
       .catch(() => {})

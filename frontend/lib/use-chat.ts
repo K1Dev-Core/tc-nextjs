@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatMessage, FileMeta, LineMessage, ChannelInfo, ReactionInfo } from './types'
-import { WS_URL, API_BASE } from './room'
+import { WS_URL, API_BASE, fetchWithRetry } from './room'
 import { isSoundEnabled, sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
 import { normalizeFileMeta } from './file-utils'
@@ -268,7 +268,7 @@ export function useChat(username: string | null) {
     }
 
     const fetchChannels = () => {
-      fetch(`${API_BASE}/channels`)
+      fetchWithRetry(`${API_BASE}/channels`)
         .then((r) => r.json())
         .then((data) => {
           if (data.channels) setChannels(data.channels)
@@ -431,7 +431,7 @@ export function useChat(username: string | null) {
     if (!channel) return
     setLoadingPins(true)
     try {
-      const res = await fetch(`${API_BASE}/pins/${encodeURIComponent(channel)}`)
+      const res = await fetchWithRetry(`${API_BASE}/pins/${encodeURIComponent(channel)}`)
       if (!res.ok) return
       const data = await res.json()
       setPinnedMessages(((data.pins ?? []) as ChatMessage[]).map((p) => ({ ...p, file: normalizeFileMeta(p.file) })))
@@ -470,7 +470,7 @@ export function useChat(username: string | null) {
     if (loadingMore || !oldestDbId.current || !channelRef.current) return
     setLoadingMore(true)
     try {
-      const res = await fetch(`${API_BASE}/history?channel=${encodeURIComponent(channelRef.current)}&before=${oldestDbId.current}`)
+      const res = await fetchWithRetry(`${API_BASE}/history?channel=${encodeURIComponent(channelRef.current)}&before=${oldestDbId.current}`)
       if (!res.ok) return
       const data = await res.json()
       const me = usernameRef.current ?? ''
