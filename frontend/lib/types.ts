@@ -43,7 +43,7 @@ export interface ChatMessage {
   reactions?: ReactionInfo[]
   pins?: ChatMessage[]
   avatar?: string | null
-  sfx?: Pick<RemoteSfxItem, 'id' | 'name' | 'url'>
+  sfx?: RemoteSfxItem
 }
 
 export interface LineMessage {

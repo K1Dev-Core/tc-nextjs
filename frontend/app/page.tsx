@@ -15,6 +15,7 @@ import { setCustomAvatar } from '@/lib/avatar'
 import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
 import { DEFAULT_THEME, THEME_KEY, isThemeName, type ThemeName } from '@/lib/theme'
+import { SfxOverlay } from '@/components/chat/sfx-overlay'
 
 
 const UsernameModal = dynamic(
@@ -319,6 +320,8 @@ export default function Page() {
           onFocusInput={focusInput}
           onSetTheme={setTheme}
         />
+
+        <SfxOverlay />
 
         {showLogin && (
           <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center">

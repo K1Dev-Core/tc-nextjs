@@ -9,6 +9,13 @@ import { normalizeFileMeta } from './file-utils'
 import { cacheLines, getCachedLines } from './client-cache'
 import { decodeSfxSignal, encodeSfxSignal, type RemoteSfxItem } from './remote-sfx'
 
+export const SFX_OVERLAY_EVENT = 'aura:sfx-overlay'
+
+function triggerOverlay(gif?: string) {
+  if (!gif || typeof window === 'undefined') return
+  try { window.dispatchEvent(new CustomEvent(SFX_OVERLAY_EVENT, { detail: gif })) } catch {}
+}
+
 const TYPING_TIMEOUT = 2500
 const TYPING_THROTTLE = 1200
 const QUEUE_KEY_PREFIX = 'aura:send-queue:'
@@ -203,6 +210,7 @@ export function useChat(username: string | null) {
           const sfxSignal = decodeSfxSignal(m.content)
           if (sfxSignal) {
             if (m.username !== me) sfx.remote(sfxSignal.url)
+            triggerOverlay(sfxSignal.gif)
             return
           }
           if (!m.content && !m.file) return
@@ -252,6 +260,7 @@ export function useChat(username: string | null) {
         case 'sfx': {
           if (m.username === me || !m.sfx?.url) return
           sfx.remote(m.sfx.url)
+          triggerOverlay(m.sfx.gif)
           break
         }
       }
@@ -366,6 +375,7 @@ export function useChat(username: string | null) {
     if (!ws || ws.readyState !== WebSocket.OPEN) return false
     const played = sfx.remote(item.url)
     if (!played) return false
+    triggerOverlay(item.gif)
     ws.send(JSON.stringify({
       type: 'message',
       content: encodeSfxSignal(item),
