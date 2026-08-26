@@ -24,8 +24,16 @@ const server = http.createServer((req, res) => {
     return
   }
 
-  const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
-  const path = url.pathname
+  let url: URL
+  let path: string
+  try {
+    url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+    path = url.pathname
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'bad request' }))
+    return
+  }
 
   if (path === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -54,7 +62,14 @@ const server = http.createServer((req, res) => {
   }
 
   if (path.startsWith('/pins/') && req.method === 'GET') {
-    const channelName = decodeURIComponent(path.slice('/pins/'.length))
+    let channelName: string
+    try {
+      channelName = decodeURIComponent(path.slice('/pins/'.length))
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'bad channel name' }))
+      return
+    }
     const channel = getChannelByName(channelName)
     if (!channel) {
       res.writeHead(404, { 'Content-Type': 'application/json' })
@@ -367,6 +382,14 @@ wss.on('connection', (ws, req) => {
 })
 
 const heartbeat = startHeartbeat()
+
+// Prevent malformed HTTP from crashing the server / hanging sockets
+server.on('clientError', (err, socket) => {
+  if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\n')
+})
+server.on('error', (err) => {
+  console.error('[HTTP SERVER ERROR]', err)
+})
 
 server.listen(PORT, HOST, () => {
   console.log(`chat server listening on http://${HOST}:${PORT}`)
