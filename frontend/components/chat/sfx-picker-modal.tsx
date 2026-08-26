@@ -1,10 +1,11 @@
 'use client'
 
-import { memo, useEffect, useMemo, useState } from 'react'
-import { CloseIcon } from '@/components/ui/icons'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { CloseIcon, StarIcon } from '@/components/ui/icons'
 import { REMOTE_SFX, SFX_COOLDOWN_MS, type RemoteSfxItem } from '@/lib/remote-sfx'
 
 const SFX_COOLDOWN_KEY = 'aura:sfx-cooldown-until'
+const SFX_FAVS_KEY = 'aura:sfx-favs'
 import { isSoundEnabled, preloadRemoteSfx, SOUND_CHANGE_EVENT } from '@/lib/sounds'
 
 interface SfxPickerModalProps {
@@ -12,8 +13,20 @@ interface SfxPickerModalProps {
   onClose: () => void
 }
 
+function loadFavs(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = JSON.parse(localStorage.getItem(SFX_FAVS_KEY) ?? '[]')
+    return new Set(Array.isArray(raw) ? raw : [])
+  } catch {
+    return new Set()
+  }
+}
+
 function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
   const [soundOn, setSoundOn] = useState(isSoundEnabled())
+  const [favs, setFavs] = useState<Set<string>>(loadFavs)
+  const [favsOnly, setFavsOnly] = useState(false)
   const [cooldownUntil, setCooldownUntil] = useState(() => {
     if (typeof window === 'undefined') return 0
     const saved = Number(localStorage.getItem(SFX_COOLDOWN_KEY) ?? '0')
@@ -24,6 +37,23 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
   const locked = !soundOn || cooldownLeft > 0
   const cooldownText = useMemo(() => cooldownLeft > 0 ? `${Math.ceil(cooldownLeft / 1000)}s` : '', [cooldownLeft])
   const statusText = !soundOn ? 'ปิดเสียงอยู่' : cooldownLeft > 0 ? `คูลดาวน์ ${cooldownText}` : ''
+
+  const persistFavs = useCallback((next: Set<string>) => {
+    setFavs(next)
+    try { localStorage.setItem(SFX_FAVS_KEY, JSON.stringify([...next])) } catch {}
+  }, [])
+
+  const toggleFav = useCallback((id: string) => {
+    const next = new Set(favs)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    persistFavs(next)
+  }, [favs, persistFavs])
+
+  const shown = useMemo(() => {
+    const pool = favsOnly ? REMOTE_SFX.filter((i) => favs.has(i.id)) : REMOTE_SFX
+    return [...pool].sort((a, b) => Number(favs.has(b.id)) - Number(favs.has(a.id)))
+  }, [favs, favsOnly])
 
   useEffect(() => {
     preloadRemoteSfx(REMOTE_SFX.map((item) => item.url))
@@ -74,18 +104,30 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
             <div className="text-[14px] font-semibold">SFX Meme</div>
             {statusText && <div className="text-[10px] text-white/35">{statusText}</div>}
           </div>
-          <button
-            onClick={onClose}
-            className="grid place-items-center w-8 h-8 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition"
-            aria-label="ปิด"
-          >
-            <CloseIcon className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFavsOnly((v) => !v)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] transition ${favsOnly ? 'bg-amber-400/20 text-amber-300' : 'text-white/45 hover:text-white/70 hover:bg-white/5'}`}
+              aria-label="แสดงเฉพาะรายการโปรด"
+            >
+              <StarIcon className="w-3.5 h-3.5" />
+              {favs.size}
+            </button>
+            <button
+              onClick={onClose}
+              className="grid place-items-center w-8 h-8 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition"
+              aria-label="ปิด"
+            >
+              <CloseIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-3 sm:p-4 overflow-y-auto scroll-slim">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {REMOTE_SFX.map((item) => (
+            {shown.length === 0 ? (
+              <div className="col-span-full py-10 text-center text-[12px] text-white/35">ยังไม่มีรายการโปรด กดดาว ☆ ที่เสียงที่ชอบได้เลย</div>
+            ) : shown.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -102,7 +144,18 @@ function SfxPickerModalBase({ onPick, onClose }: SfxPickerModalProps) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] text-white/85 font-medium">{item.name}</span>
-                  <span className="block truncate text-[10px] text-white/32">คูลดาวน์ 1 นาที</span>
+                  <span className="block truncate text-[10px] text-white/32">คูลดาวน์ 20 วินาที</span>
+                </span>
+                <span
+                  role="button"
+                  tabIndex={-1}
+                  onClick={(e) => { e.stopPropagation(); toggleFav(item.id) }}
+                  className="grid place-items-center w-7 h-7 rounded-lg shrink-0 transition"
+                  aria-label={favs.has(item.id) ? 'เลิกโปรด' : 'เพิ่มโปรด'}
+                >
+                  <StarIcon
+                    className={`w-4 h-4 transition ${favs.has(item.id) ? 'text-amber-400 fill-amber-400' : 'text-white/25 group-hover:text-white/60'}`}
+                  />
                 </span>
               </button>
             ))}
