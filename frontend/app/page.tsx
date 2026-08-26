@@ -14,6 +14,7 @@ import { API_BASE } from '@/lib/room'
 import { setCustomAvatar } from '@/lib/avatar'
 import { normalizeFileMeta } from '@/lib/file-utils'
 import { sfx } from '@/lib/sounds'
+import { decodeSfxSignal } from '@/lib/remote-sfx'
 import { DEFAULT_THEME, THEME_KEY, isThemeName, type ThemeName } from '@/lib/theme'
 import { SfxOverlay } from '@/components/chat/sfx-overlay'
 
@@ -120,7 +121,10 @@ export default function Page() {
     fetch(`${API_BASE}/history?channel=${encodeURIComponent(ch)}`)
       .then((r) => r.json())
       .then((d) => {
-        if (d.messages) setGuestLines(d.messages.map(toGuestLine))
+        if (d.messages) {
+          const visible = (d.messages as ChatMessage[]).filter((m) => !decodeSfxSignal(m.content))
+          setGuestLines(visible.map(toGuestLine))
+        }
       })
       .catch(() => {})
       .finally(() => setGuestLoadingMessages(false))

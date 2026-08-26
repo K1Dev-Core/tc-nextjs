@@ -6,6 +6,7 @@ export interface RemoteSfxItem {
   url: string
   source: string
   gif?: string
+  holdMs?: number
 }
 
 export const SFX_COOLDOWN_MS = 20_000
@@ -1006,7 +1007,7 @@ export const REMOTE_SFX: RemoteSfxItem[] = [
   { id: 'wow-matikane-tannhauser-2945', name: 'wow~~~ matikane tannhauser', emoji: '🔊', color: '#a855f7', url: '/sfx/wow-matikane-tannhauser-2945.mp3', source: 'myinstants' },
   { id: 'yamate-kudesai-16901', name: 'Yamate Kudesai', emoji: '🔊', color: '#d946ef', url: '/sfx/yamate-kudesai-16901.mp3', source: 'myinstants' },
   { id: 'ykodntuudaichaihm-9528', name: 'อยกโดนตูดใช่ไหม', emoji: '🔊', color: '#ec4899', url: '/sfx/ykodntuudaichaihm-9528.mp3', source: 'myinstants' },
-  { id: 'domain-expansion-sukuna', name: 'Domain Expansion Sukuna', emoji: '🌋', color: '#a855f7', url: '/sfx/domain-expansion-sukuna.mp3', source: 'custom', gif: '/sfx/domain-expansion-sukuna.gif' },
+  { id: 'domain-expansion-sukuna', name: 'Domain Expansion Sukuna', emoji: '🌋', color: '#a855f7', url: '/sfx/domain-expansion-sukuna.mp3', source: 'custom', gif: '/sfx/domain-expansion-sukuna.gif', holdMs: 7210 },
 ]
 
 export function findRemoteSfx(id: string) {

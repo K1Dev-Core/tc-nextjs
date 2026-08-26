@@ -11,9 +11,10 @@ import { decodeSfxSignal, encodeSfxSignal, type RemoteSfxItem } from './remote-s
 
 export const SFX_OVERLAY_EVENT = 'aura:sfx-overlay'
 
-function triggerOverlay(gif?: string) {
+function triggerOverlay(item?: Pick<RemoteSfxItem, 'gif' | 'holdMs'>) {
+  const gif = item?.gif
   if (!gif || typeof window === 'undefined') return
-  try { window.dispatchEvent(new CustomEvent(SFX_OVERLAY_EVENT, { detail: gif })) } catch {}
+  try { window.dispatchEvent(new CustomEvent(SFX_OVERLAY_EVENT, { detail: { gif, holdMs: item.holdMs } })) } catch {}
 }
 
 const TYPING_TIMEOUT = 2500
@@ -210,7 +211,7 @@ export function useChat(username: string | null) {
           const sfxSignal = decodeSfxSignal(m.content)
           if (sfxSignal) {
             if (m.username !== me) sfx.remote(sfxSignal.url)
-            triggerOverlay(sfxSignal.gif)
+            triggerOverlay(sfxSignal)
             return
           }
           if (!m.content && !m.file) return
@@ -260,7 +261,7 @@ export function useChat(username: string | null) {
         case 'sfx': {
           if (m.username === me || !m.sfx?.url) return
           sfx.remote(m.sfx.url)
-          triggerOverlay(m.sfx.gif)
+          triggerOverlay(m.sfx)
           break
         }
       }
@@ -375,7 +376,7 @@ export function useChat(username: string | null) {
     if (!ws || ws.readyState !== WebSocket.OPEN) return false
     const played = sfx.remote(item.url)
     if (!played) return false
-    triggerOverlay(item.gif)
+    triggerOverlay(item)
     ws.send(JSON.stringify({
       type: 'message',
       content: encodeSfxSignal(item),
