@@ -7,7 +7,7 @@ import { isSoundEnabled, sfx } from './sounds'
 import { updateAvatarCache } from './avatar'
 import { normalizeFileMeta } from './file-utils'
 import { cacheLines, getCachedLines } from './client-cache'
-import { decodeSfxSignal, encodeSfxSignal, type RemoteSfxItem } from './remote-sfx'
+import { decodeSfxSignal, encodeSfxSignal, findRemoteSfx, type RemoteSfxItem } from './remote-sfx'
 
 export const SFX_OVERLAY_EVENT = 'aura:sfx-overlay'
 
@@ -261,7 +261,7 @@ export function useChat(username: string | null) {
         case 'sfx': {
           if (m.username === me || !m.sfx?.url) return
           sfx.remote(m.sfx.url)
-          triggerOverlay(m.sfx)
+          triggerOverlay(findRemoteSfx(m.sfx.id) ?? m.sfx)
           break
         }
       }
@@ -378,8 +378,8 @@ export function useChat(username: string | null) {
     if (!played) return false
     triggerOverlay(item)
     ws.send(JSON.stringify({
-      type: 'message',
-      content: encodeSfxSignal(item),
+      type: 'sfx',
+      sfx: { id: item.id, name: item.name, url: item.url },
     }))
     return true
   }, [])
