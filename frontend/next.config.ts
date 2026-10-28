@@ -11,6 +11,15 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'img.freepik.com' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        destination: 'https://tc-newgen-chat.vercel.app/:path*',
+        permanent: true,
+      },
+    ]
+  },
   async rewrites() {
     return [
       {
